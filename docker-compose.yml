@@ -13,7 +13,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./Data/Schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./backend/Data/Schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -29,11 +29,11 @@ services:
     networks:
       - expenseTrackerNetwork
     environment:
-      CONNECTIONSTRINGS_EXPENSETRACKER: "Host=testBalastLane;Port=5432;Database=expense_tracker;Username=postgres;Password=password"
-      JWT_KEY: ${JWT_KEY:-your-256-bit-secret-key-at-least-32-characters-long-for-signing}
-      JWT_ISSUER: ${JWT_ISSUER:-ExpenseTrackerApi}
-      JWT_AUDIENCE: ${JWT_AUDIENCE:-ExpenseTrackerClient}
-      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+      CONNECTIONSTRINGS_EXPENSETRACKER: CONNECTIONSTRINGS_EXPENSETRACKER
+      JWT_KEY: JWT_KEY
+      JWT_ISSUER: JWT_ISSUER
+      JWT_AUDIENCE: JWT_AUDIENCE
+      ASPNETCORE_ENVIRONMENT: ASPNETCORE_ENVIRONMENT
     ports:
       - "5157:8080"
       - "5158:8443"
