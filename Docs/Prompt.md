@@ -13,3 +13,11 @@ Please provide the CLI commands to create the solution and generate the core boi
 - ExpenseTracker.Infrastructure: Implement the repository interface using Entity Framework Core and provide the Database Context
 
 - ExpenseTracker.Api: Include an ExpensesController with standard HTTP verbs, wire up Dependency Injection for the layers, and configure basic JWT Authentication for a single user.
+
+## Usefull Commands
+
+Docker compose launch with .env local file.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.override.yml --env-file ./backend/ExpenseTracker.Api/.env.local up -d
+```

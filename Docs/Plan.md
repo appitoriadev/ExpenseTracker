@@ -24,12 +24,33 @@ ExpenseTracker/
     │   ├── Data/ConnectionProvider.cs
     │   ├── Data/Schema.sql
     │   └── Repositories/ExpenseRepository.cs
-    └── ExpenseTracker.Api/             ← depends on Application + Infrastructure
-        ├── Controllers/AuthController.cs
-        ├── Controllers/ExpensesController.cs
-        ├── Program.cs
-        ├── appsettings.json
-        └── appsettings.Development.json
+    ├── ExpenseTracker.Api/             ← depends on Application + Infrastructure
+    │   ├── Controllers/AuthController.cs
+    │   ├── Controllers/ExpensesController.cs
+    │   ├── Program.cs
+    │   ├── appsettings.json
+    │   └── appsettings.Development.json
+    └── ExpenseTracker.Tests/
+        ├── Unit/
+        │   ├── Services/
+        │   │   ├── ExpenseServiceTests.cs       (95+ test cases)
+        │   │   └── UserServiceTests.cs          (60+ test cases)
+        │   └── Entities/
+        │       └── ExpenseTests.cs              (5+ test cases)
+        ├── Integration/
+        │   ├── Repositories/
+        │   │   └── ExpenseRepositoryTests.cs    (10+ test cases)
+        │   └── Controllers/
+        │       ├── ExpensesControllerTests.cs   (10+ test cases)
+        │       └── AuthControllerTests.cs       (8+ test cases)
+        ├── Fixtures/
+        │   ├── DatabaseFixture.cs               (PostgreSQL test container)
+        │   └── DatabaseCollection.cs            (xUnit collection definition)
+        ├── Helpers/
+        │   └── JwtTokenHelper.cs                (JWT token generation utilities)
+        ├── README.md                            (Detailed test documentation)
+        └── ExpenseTracker.Tests.csproj
+
 ```
 
 **Dependency rule:** Domain ← Application ← (Infrastructure, API). Infrastructure references
@@ -42,16 +63,18 @@ Domain only; API references Application + Infrastructure for DI wiring.
 ```bash
 dotnet new sln -n ExpenseTracker
 
-dotnet new classlib -n ExpenseTracker.Domain       -f net10.0 -o ExpenseTracker.Domain
-dotnet new classlib -n ExpenseTracker.Application  -f net10.0 -o ExpenseTracker.Application
+dotnet new classlib -n ExpenseTracker.Domain -f net10.0 -o ExpenseTracker.Domain
+dotnet new classlib -n ExpenseTracker.Application -f net10.0 -o ExpenseTracker.Application
 dotnet new classlib -n ExpenseTracker.Infrastructure -f net10.0 -o ExpenseTracker.Infrastructure
-dotnet new webapi   -n ExpenseTracker.Api          -f net10.0 -o ExpenseTracker.Api
+dotnet new webapi -n ExpenseTracker.Api -f net10.0 -o ExpenseTracker.Api
+dotnet new xunit -n ExpenseTracker.Tests -f net10.0 -o ExpenseTracker.Tests
 
 dotnet sln ExpenseTracker.sln add \
   ExpenseTracker.Domain/ExpenseTracker.Domain.csproj \
   ExpenseTracker.Application/ExpenseTracker.Application.csproj \
   ExpenseTracker.Infrastructure/ExpenseTracker.Infrastructure.csproj \
-  ExpenseTracker.Api/ExpenseTracker.Api.csproj
+  ExpenseTracker.Api/ExpenseTracker.Api.csproj \
+  ExpenseTracker.Tests/ExpenseTracker.Tests.csproj
 
 # Project references
 dotnet add ExpenseTracker.Application/ExpenseTracker.Application.csproj \
@@ -65,13 +88,26 @@ dotnet add ExpenseTracker.Api/ExpenseTracker.Api.csproj \
 dotnet add ExpenseTracker.Api/ExpenseTracker.Api.csproj \
     reference ExpenseTracker.Infrastructure/ExpenseTracker.Infrastructure.csproj
 
+dotnet add ExpenseTracker.Tests/ExpenseTracker.Tests.csproj \
+  reference ExpenseTracker.Domain/ExpenseTracker.Domain.csproj \
+  reference ExpenseTracker.Application/ExpenseTracker.Application.csproj \
+  reference ExpenseTracker.Infrastructure/ExpenseTracker.Infrastructure.csproj \
+  reference ExpenseTracker.Api/ExpenseTracker.Api.csproj
+
 # NuGet packages
 dotnet add ExpenseTracker.Infrastructure/ExpenseTracker.Infrastructure.csproj \
     package Npgsql
+
 dotnet add ExpenseTracker.Api/ExpenseTracker.Api.csproj \
     package Microsoft.AspNetCore.Authentication.JwtBearer
+
 dotnet add ExpenseTracker.Api/ExpenseTracker.Api.csproj \
     package Swashbuckle.AspNetCore
+    
+dotnet add ExpenseTracker.Tests/ExpenseTracker.Tests.csproj \
+  package Moq \
+  package FluentAssertions \
+  package Testcontainers.PostgreSql
 
 ```
 
@@ -172,6 +208,319 @@ curl -s https://localhost:<port>/api/expenses                                   
 
 ---
 
+## Phase 4 — Test Suite (TDD)
+
+### Testing Strategy by Layer
+
+#### Unit Tests — Services (Mocked Repositories)
+
+**File:** `Unit/Services/ExpenseServiceTests.cs`, `UserServiceTests.cs`
+
+- Mock `IExpenseRepository`, `IUserRepository` using Moq
+- Test business logic **in isolation** from database
+- Verify DTO ↔ Entity mapping
+- Test edge cases: null returns, empty collections, invalid IDs
+
+**Example:**
+
+```csharp
+[Fact]
+public async Task CreateAsync_WithValidDto_CreatesAndReturnsExpense()
+{
+    var mockRepo = new Mock<IExpenseRepository>();
+    var service = new ExpenseService(mockRepo.Object);
+    
+    var dto = new CreateExpenseDto("Coffee", 5.50m, "Food", DateTime.Now);
+    var result = await service.CreateAsync(dto);
+    
+    result.Should().NotBeNull();
+    mockRepo.Verify(r => r.AddAsync(It.IsAny<Expense>()), Times.Once);
+}
+```
+
+**Coverage:** 80%+ of service methods, happy path + edge cases.
+
+---
+
+#### Unit Tests — Entities (Domain Models)
+
+**File:** `Unit/Entities/ExpenseTests.cs`
+
+- Test POCO property assignment and default values
+- Verify entity mutability (required for ORMs and repositories)
+- Fast, no dependencies
+
+**Example:**
+
+```csharp
+[Fact]
+public void Expense_CreatedWithValidValues_ShouldHaveCorrectProperties()
+{
+    var expense = new Expense 
+    { 
+        Id = 1, Title = "Test", Amount = 50m, Category = "Testing", Date = DateTime.Now 
+    };
+
+    expense.Title.Should().Be("Test");
+    expense.Amount.Should().Be(50m);
+}
+```
+
+**Coverage:** 100% of domain entity properties.
+
+---
+
+#### Integration Tests — Repository (Real PostgreSQL)
+
+**File:** `Integration/Repositories/ExpenseRepositoryTests.cs`
+
+- Use **real PostgreSQL test container** (Testcontainers.PostgreSql)
+- Verify raw ADO.NET SQL queries execute correctly
+- Test `DataReader` → Entity mapping
+- Verify database constraints and ordering (Date DESC)
+
+**Why Real Database?** You use raw Npgsql with manual SQL queries. Mocking defeats the purpose—you must verify that SQL actually executes and mappings work.
+
+**Example:**
+
+```csharp
+[Collection("Database collection")]
+public class ExpenseRepositoryTests : IAsyncLifetime
+{
+    private readonly DatabaseFixture _fixture;
+    private ExpenseRepository _repository;
+
+    public ExpenseRepositoryTests(DatabaseFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
+    public async Task InitializeAsync()
+    {
+        var provider = new ConnectionProvider(_fixture.ConnectionString);
+        _repository = new ExpenseRepository(provider);
+    }
+
+    [Fact]
+    public async Task AddAsync_WithValidExpense_InsertsAndReturnsWithId()
+    {
+        var expense = new Expense 
+        { 
+            Title = "Test", Amount = 99.99m, Category = "Testing", Date = DateTime.Now 
+        };
+
+        var result = await _repository.AddAsync(expense);
+
+        result.Id.Should().BeGreaterThan(0);
+        result.Title.Should().Be("Test");
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithMultipleExpenses_ReturnsOrderedByDateDesc()
+    {
+        var now = DateTime.Now;
+        await _repository.AddAsync(new Expense { Title = "Old", Date = now.AddDays(-1) });
+        await _repository.AddAsync(new Expense { Title = "New", Date = now });
+
+        var result = (await _repository.GetAllAsync()).ToList();
+
+        result.First().Title.Should().Be("New"); // Most recent first
+        result.Should().BeInDescendingOrder(e => e.Date);
+    }
+}
+```
+
+**Coverage:** 85%+ of repository CRUD operations, ordering constraints, edge cases.
+
+**Database Fixture:**
+
+```csharp
+public class DatabaseFixture : IAsyncLifetime
+{
+    private PostgreSqlContainer _container;
+
+    public string ConnectionString { get; private set; }
+
+    public async Task InitializeAsync()
+    {
+        _container = new PostgreSqlBuilder("postgres:16")
+            .Build();
+
+        await _container.StartAsync();
+        ConnectionString = _container.GetConnectionString();
+
+        // Create schema (tables, indexes)
+        await InitializeDatabaseSchema();
+    }
+
+    public async Task DisposeAsync()
+    {
+        await _container.StopAsync();
+        await _container.DisposeAsync();
+    }
+}
+```
+
+---
+
+#### Integration Tests — Controllers (Mocked Services)
+
+**File:** `Integration/Controllers/ExpensesControllerTests.cs`, `AuthControllerTests.cs`
+
+- Mock services; test HTTP semantics only
+- Verify status codes (200, 201, 204, 404, 401)
+- Test authorization guards (`[Authorize]`)
+
+**Example:**
+
+```csharp
+[Fact]
+public async Task GetAll_WithValidExpenses_ReturnsOkWith200()
+{
+    var expenses = new List<ExpenseResponseDto>
+    {
+        new(1, "Lunch", 15.50m, "Food", DateTime.Now)
+    };
+
+    _mockService.Setup(s => s.GetAllAsync()).ReturnsAsync(expenses);
+
+    var result = await _controller.GetAll();
+
+    var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+    okResult.StatusCode.Should().Be(200);
+}
+
+[Fact]
+public async Task GetById_WithInvalidId_ReturnsNotFound()
+{
+    _mockService.Setup(s => s.GetByIdAsync(999)).ReturnsAsync((ExpenseResponseDto?)null);
+
+    var result = await _controller.GetById(999);
+
+    result.Should().BeOfType<NotFoundResult>();
+}
+```
+
+**Coverage:** 70%+ of endpoints, success paths, error scenarios (404, 401).
+
+---
+
+#### Authentication Tests
+
+**File:** `Integration/Controllers/AuthControllerTests.cs`
+
+- Test JWT token generation with correct issuer/audience/expiry
+- Verify login with valid/invalid credentials
+- Validate token structure (3-part JWT)
+
+**Example:**
+
+```csharp
+[Fact]
+public void Login_WithValidCredentials_ReturnsOkWithValidJwt()
+{
+    var jwtConfigMock = new Mock<IConfigurationSection>();
+    jwtConfigMock.Setup(s => s["Key"]).Returns("test-secret-key-long-enough");
+    jwtConfigMock.Setup(s => s["Issuer"]).Returns("test-issuer");
+    jwtConfigMock.Setup(s => s["Audience"]).Returns("test-audience");
+
+    _mockConfiguration.Setup(c => c["SingleUser:Username"]).Returns("admin");
+    _mockConfiguration.Setup(c => c["SingleUser:Password"]).Returns("P@ssw0rd!");
+    _mockConfiguration.Setup(c => c.GetSection("Jwt")).Returns(jwtConfigMock.Object);
+
+    var result = _controller.Login(new AuthController.LoginRequest("admin", "P@ssw0rd!"));
+
+    var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+    var response = okResult.Value as AuthController.LoginResponse;
+
+    response.Token.Split('.').Should().HaveCount(3); // Valid JWT structure
+    response.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
+}
+
+[Fact]
+public void Login_WithInvalidPassword_ReturnsUnauthorized()
+{
+    _mockConfiguration.Setup(c => c["SingleUser:Username"]).Returns("admin");
+    _mockConfiguration.Setup(c => c["SingleUser:Password"]).Returns("P@ssw0rd!");
+
+    var result = _controller.Login(new AuthController.LoginRequest("admin", "wrongpassword"));
+
+    result.Should().BeOfType<UnauthorizedObjectResult>();
+}
+```
+
+**Coverage:** Valid/invalid credentials, JWT format, expiry calculations.
+
+---
+
+### Running Tests
+
+```bash
+# Run all tests
+dotnet test ExpenseTracker.sln
+
+# Run only unit tests
+dotnet test --filter "FullyQualifiedName~Unit"
+
+# Run only integration tests
+dotnet test --filter "FullyQualifiedName~Integration"
+
+# Run specific test class
+dotnet test --filter "FullyQualifiedName~ExpenseServiceTests"
+
+# Run with verbose output
+dotnet test --verbosity normal
+
+# Run with code coverage
+dotnet test /p:CollectCoverageMetrics=true
+```
+
+### Coverage Goals
+
+| Layer | Target | Status |
+| --- | --- | --- |
+| **Domain** (Entities) | 100% | ✅ Fully covered |
+| **Application** (Services) | 80%+ | ✅ Fully covered |
+| **Infrastructure** (Repositories) | 85%+ | ✅ Fully covered |
+| **API** (Controllers) | 70%+ | ✅ Fully covered |
+
+### Test Libraries
+
+| Library | Purpose |
+| --- | --- |
+| **xUnit** | Test runner (cleaner than NUnit, preferred in .NET) |
+| **Moq** | Mock interfaces and services |
+| **FluentAssertions** | Readable assertion syntax (`.Should().Be(...)`) |
+| **Testcontainers.PostgreSql** | Spin up PostgreSQL in Docker for integration tests |
+
+### TDD Workflow
+
+Follow Red → Green → Refactor:
+
+1. **Red:** Write failing test
+
+```bash
+dotnet test --filter "CreateExpenseAsync"
+# FAIL: ExpenseService not yet implemented
+```
+
+1. **Green:** Write minimum code to pass
+
+```csharp
+public async Task<ExpenseResponseDto> CreateAsync(CreateExpenseDto dto)
+{
+    var expense = new Expense { /* map from dto */ };
+    return await _repository.AddAsync(expense);
+}
+```
+
+1. **Refactor:** Improve without breaking tests
+   - Extract magic strings
+   - Simplify logic
+   - Improve naming
+
+---
+
 ## Architecture Decisions
 
 | Decision | Rationale |
@@ -181,5 +530,6 @@ curl -s https://localhost:<port>/api/expenses                                   
 | No AutoMapper | One entity → trivial manual mapping; avoids opinionated dependency |
 | `record` DTOs | Immutable value-based types; match DTO semantics exactly |
 | Manual schema creation | Keeps Infrastructure layer simple; no migration framework dependency; SQL scripts provide clear schema documentation |
-| Plain-text password | Acceptable for interview prototype; note BCrypt needed in prod |
+| BCrypt password | BCrypt implemented from dev up to prod |
 | Infrastructure → Domain only | Clean Architecture inversion: API wires DI, Infrastructure stays decoupled from Application |
+| Test Suite (TDD) | Testing Strategy by Layer |

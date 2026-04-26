@@ -53,7 +53,7 @@ ExpenseTracker.Api/                 → Depends on Application + Infrastructure
 **Program.cs:**
 - Loads env via `DotEnv.Load()` (dotenv.net)
 - DI: ConnectionProvider (Singleton), IExpenseRepository, IExpenseService
-- JWT auth from env: `JWT_KEY`, `JWT_ISSUER`, `JWT_AUDIENCE`
+- JWT auth from env: `JWT_KEY`, `JWT_ISSUER`, `JWT_AUDIENCE`, `JWT_EXPIRYMINUTES`
 - CORS from config `Cors:AllowedOrigins`
 - Middleware order: CORS → Authentication → Authorization → Controllers
 - Swagger enabled in Development
