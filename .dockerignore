@@ -1,0 +1,13 @@
+**/.git
+**/.gitignore
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/dist
+**/.DS_Store
+**/node_modules
+**/.env
+**/.env.local
+**/Docs
+**/README.md
