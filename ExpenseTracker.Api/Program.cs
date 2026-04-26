@@ -5,39 +5,48 @@ using ExpenseTracker.Domain.Interfaces;
 using ExpenseTracker.Infrastructure.Data;
 using ExpenseTracker.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using dotenv.net;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Database ──────────────────────────────────────────────────────────────────
-builder.Services.AddDbContext<ExpenseDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Loads .env into the process environment
+DotEnv.Load();
+
+// ── Connection Provider ───────────────────────────────────────────────────────
+var _connectionString = Environment.GetEnvironmentVariable("CONNECTIONSTRINGS_EXPENSETRACKER")
+?? throw new InvalidOperationException("ConnectionString 'ExpenseTracker' not found in configuration.");
+builder.Services.AddSingleton(new ConnectionProvider(_connectionString));
 
 // ── Dependency Injection ──────────────────────────────────────────────────────
 builder.Services.AddScoped<IExpenseRepository, ExpenseRepository>();
 builder.Services.AddScoped<IExpenseService, ExpenseService>();
+builder.Services.AddHttpContextAccessor();
 
 // ── JWT Authentication ────────────────────────────────────────────────────────
-var jwtSection = builder.Configuration.GetSection("Jwt");
-var jwtKey     = jwtSection["Key"]
-    ?? throw new InvalidOperationException("JWT Key is not configured.");
+var JWT_KEY = Environment.GetEnvironmentVariable("JWT_KEY")
+?? throw new InvalidOperationException("JWT Key is not configured.");
+
+var JWT_ISSUER = Environment.GetEnvironmentVariable("JWT_KEY")
+?? throw new InvalidOperationException("JWT Issuer is not configured.");
+
+var JWT_AUDIENCE = Environment.GetEnvironmentVariable("JWT_AUDIENCE")
+?? throw new InvalidOperationException("JWT Audience is not configured.");
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+    .AddJwtBearer(o =>
     {
-        options.TokenValidationParameters = new TokenValidationParameters
+        o.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer           = true,
-            ValidateAudience         = true,
-            ValidateLifetime         = true,
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer              = jwtSection["Issuer"],
-            ValidAudience            = jwtSection["Audience"],
-            IssuerSigningKey         = new SymmetricSecurityKey(
-                                           Encoding.UTF8.GetBytes(jwtKey))
+            ValidIssuer = JWT_ISSUER,
+            ValidAudience = JWT_AUDIENCE,
+            RequireExpirationTime = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JWT_KEY))
         };
     });
 
@@ -47,7 +56,7 @@ builder.Services.AddAuthorization();
 var allowedOrigins = builder.Configuration
                             .GetSection("Cors:AllowedOrigins")
                             .Get<string[]>()
-                     ?? Array.Empty<string>();
+                            ?? Array.Empty<string>();
 
 builder.Services.AddCors(options =>
 {
@@ -60,49 +69,17 @@ builder.Services.AddCors(options =>
 // ── Controllers + Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title   = "Expense Tracker API",
-        Version = "v1"
-    });
-
-    // Add JWT Bearer button to Swagger UI
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name         = "Authorization",
-        Type         = SecuritySchemeType.Http,
-        Scheme       = "bearer",
-        BearerFormat = "JWT",
-        In           = ParameterLocation.Header,
-        Description  = "Enter your JWT token. Example: eyJhbGci..."
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id   = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
-});
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// ── Auto-apply migrations on startup ─────────────────────────────────────────
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<ExpenseDbContext>();
-    db.Database.Migrate();
-}
+//Option 2: Table creation in case Tasks.json doesn't work.
+// using (var scope = app.Services.CreateScope())
+// {
+//     var connectionProvider = scope.ServiceProvider.GetRequiredService<ConnectionProvider>();
+//     var _path = Environment.GetEnvironmentVariable("CONNECTIONSTRING_SQLPATH") ?? throw new InvalidOperationException("SQL Schema Path is not configured.");
+//     await connectionProvider.EnsureSchemaAsync(_path);
+// }
 
 // ── Middleware pipeline ───────────────────────────────────────────────────────
 if (app.Environment.IsDevelopment())
