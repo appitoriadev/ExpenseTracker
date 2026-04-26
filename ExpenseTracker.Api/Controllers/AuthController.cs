@@ -21,6 +21,17 @@ public class AuthController : ControllerBase
     public record LoginResponse(string Token, DateTime ExpiresAt);
 
     /// <summary>
+    /// Register a user to the application
+    /// </summary>
+    [HttpPost("register")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public IActionResult Register([FromBody] LoginRequest request)
+    {
+        return Ok(new { message = "Registration not yet implemented" });
+    }
+
+
+    /// <summary>
     /// Authenticates the single configured user and returns a JWT Bearer token.
     /// </summary>
     [HttpPost("login")]
