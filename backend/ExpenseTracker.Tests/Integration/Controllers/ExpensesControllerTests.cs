@@ -25,8 +25,8 @@ public class ExpensesControllerTests
     {
         var expenses = new List<ExpenseResponseDto>
         {
-            new(Guid.NewGuid(), "Lunch", 15.50m, "Food", DateTime.Now),
-            new(Guid.NewGuid(), "Gas", 45.00m, "Transportation", DateTime.Now)
+            new(1, "Lunch", 15.50m, "Food", DateTime.Now),
+            new(2, "Gas", 45.00m, "Transportation", DateTime.Now)
         };
 
         _mockService.Setup(s => s.GetAllAsync()).ReturnsAsync(expenses);
@@ -58,7 +58,7 @@ public class ExpensesControllerTests
     [Fact]
     public async Task GetById_WithValidId_ReturnsOkWithExpense()
     {
-        var id = Guid.NewGuid();
+        var id = 1;
         var expense = new ExpenseResponseDto(id, "Coffee", 5.50m, "Food", DateTime.Now);
         _mockService.Setup(s => s.GetByIdAsync(id)).ReturnsAsync(expense);
 
@@ -73,7 +73,7 @@ public class ExpensesControllerTests
     [Fact]
     public async Task GetById_WithInvalidId_ReturnsNotFound()
     {
-        var id = Guid.NewGuid();
+        var id = 999;
         _mockService.Setup(s => s.GetByIdAsync(id)).ReturnsAsync((ExpenseResponseDto?)null);
 
         var result = await _controller.GetById(id);
@@ -89,7 +89,7 @@ public class ExpensesControllerTests
     public async Task Create_WithValidDto_ReturnsCreatedAtActionWith201()
     {
         var createDto = new CreateExpenseDto("New Expense", 100m, "Test", DateTime.Now);
-        var createdId = Guid.NewGuid();
+        var createdId = 10;
         var createdDto = new ExpenseResponseDto(createdId, "New Expense", 100m, "Test", DateTime.Now);
 
         _mockService.Setup(s => s.CreateAsync(createDto)).ReturnsAsync(createdDto);
@@ -110,7 +110,7 @@ public class ExpensesControllerTests
     [Fact]
     public async Task Update_WithValidId_ReturnsOkWithUpdatedExpense()
     {
-        var id = Guid.NewGuid();
+        var id = 20;
         var updateDto = new UpdateExpenseDto("Updated", 200m, "Updated", DateTime.Now);
         var updatedDto = new ExpenseResponseDto(id, "Updated", 200m, "Updated", DateTime.Now);
 
@@ -125,7 +125,7 @@ public class ExpensesControllerTests
     [Fact]
     public async Task Update_WithInvalidId_ReturnsNotFound()
     {
-        var id = Guid.NewGuid();
+        var id = 999;
         var updateDto = new UpdateExpenseDto("Updated", 200m, "Updated", DateTime.Now);
 
         _mockService.Setup(s => s.UpdateAsync(id, updateDto)).ReturnsAsync((ExpenseResponseDto?)null);
@@ -142,7 +142,7 @@ public class ExpensesControllerTests
     [Fact]
     public async Task Delete_WithValidId_ReturnsNoContent()
     {
-        var id = Guid.NewGuid();
+        var id = 30;
         _mockService.Setup(s => s.DeleteAsync(id)).ReturnsAsync(true);
 
         var result = await _controller.Delete(id);
@@ -153,7 +153,7 @@ public class ExpensesControllerTests
     [Fact]
     public async Task Delete_WithInvalidId_ReturnsNotFound()
     {
-        var id = Guid.NewGuid();
+        var id = 999;
         _mockService.Setup(s => s.DeleteAsync(id)).ReturnsAsync(false);
 
         var result = await _controller.Delete(id);

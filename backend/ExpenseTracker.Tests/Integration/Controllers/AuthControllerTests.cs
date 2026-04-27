@@ -25,7 +25,7 @@ public class AuthControllerTests
     {
         var request = new RegisterRequest("testuser", "test@example.com", "password123", "Test", "User");
         var authResponse = new AuthResponse(
-            UserId: Guid.NewGuid(),
+            UserId: 1,
             Username: "testuser",
             Token: "jwt-token-here",
             RefreshToken: "refresh-token-here",
@@ -76,7 +76,7 @@ public class AuthControllerTests
     {
         var request = new LoginRequest("testuser", "password123");
         var authResponse = new AuthResponse(
-            UserId: Guid.NewGuid(),
+            UserId: 2,
             Username: "testuser",
             Token: "jwt-token-here",
             RefreshToken: "refresh-token-here",
@@ -131,7 +131,7 @@ public class AuthControllerTests
     {
         var refreshToken = "valid-refresh-token";
         var authResponse = new AuthResponse(
-            UserId: Guid.NewGuid(),
+            UserId: 3,
             Username: "testuser",
             Token: "new-jwt-token",
             RefreshToken: "new-refresh-token",

@@ -39,7 +39,7 @@ public class ExpenseRepository : IExpenseRepository
         return expenses;
     }
 
-    public async Task<Expense?> GetByIdAsync(Guid id)
+    public async Task<Expense?> GetByIdAsync(int id)
     {
         using (var connection = _connectionProvider.CreateConnection())
         {
@@ -82,8 +82,8 @@ public class ExpenseRepository : IExpenseRepository
                 command.Parameters.AddWithValue("@date", expense.Date);
 
                 var result = await command.ExecuteScalarAsync();
-                if (result is Guid guid)
-                    expense.Id = guid;
+                if (result is int newId)
+                    expense.Id = newId;
             }
         }
 
@@ -114,7 +114,7 @@ public class ExpenseRepository : IExpenseRepository
         }
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
         using (var connection = _connectionProvider.CreateConnection())
         {
@@ -134,7 +134,7 @@ public class ExpenseRepository : IExpenseRepository
     private static Expense MapFromReader(NpgsqlDataReader reader) =>
         new()
         {
-            Id       = reader.GetGuid(0),
+            Id       = reader.GetInt32(0),
             Title    = reader.GetString(1),
             Amount   = reader.GetDecimal(2),
             CategoryName = reader.GetString(3),

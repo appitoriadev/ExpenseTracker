@@ -12,7 +12,6 @@ public class ExpenseRepositoryTests : IAsyncLifetime
 {
     private readonly DatabaseFixture _fixture;
     private ExpenseRepository _repository = null!;
-    private static Guid guid;
     private NpgsqlConnection _connection = null!;
 
     public ExpenseRepositoryTests(DatabaseFixture fixture)
@@ -24,7 +23,6 @@ public class ExpenseRepositoryTests : IAsyncLifetime
     {
         var connectionProvider = new ConnectionProvider(_fixture.ConnectionString);
         _repository = new ExpenseRepository(connectionProvider);
-        guid = Guid.NewGuid();
 
         _connection = new NpgsqlConnection(_fixture.ConnectionString);
         await _connection.OpenAsync();
@@ -76,7 +74,7 @@ public class ExpenseRepositoryTests : IAsyncLifetime
         var result = await _repository.AddAsync(expense);
 
         result.Should().NotBeNull();
-        result.Id.Should().NotBeEmpty();
+        result.Id.Should().BeGreaterThan(0);
         result.Title.Should().Be("Test Expense");
         result.Amount.Should().Be(99.99m);
     }
@@ -98,7 +96,7 @@ public class ExpenseRepositoryTests : IAsyncLifetime
         }
 
         results.Should().HaveCount(3);
-        results.Should().AllSatisfy(r => r.Id.Should().NotBeEmpty());
+        results.Should().AllSatisfy(r => r.Id.Should().BeGreaterThan(0));
     }
 
     #endregion
@@ -172,7 +170,7 @@ public class ExpenseRepositoryTests : IAsyncLifetime
     [Fact]
     public async Task GetByIdAsync_WithInvalidId_ReturnsNull()
     {
-        var result = await _repository.GetByIdAsync(new Guid());
+        var result = await _repository.GetByIdAsync(0);
 
         result.Should().BeNull();
     }
@@ -215,7 +213,7 @@ public class ExpenseRepositoryTests : IAsyncLifetime
     {
         var expense = new Expense
         {
-            Id = new Guid(),
+            Id = 0,
             Title = "Ghost",
             Amount = 10m,
             CategoryName = "Cat",
@@ -254,7 +252,7 @@ public class ExpenseRepositoryTests : IAsyncLifetime
     [Fact]
     public async Task DeleteAsync_WithInvalidId_ReturnsFalse()
     {
-        var result = await _repository.DeleteAsync(Guid.NewGuid());
+        var result = await _repository.DeleteAsync(999999);
 
         result.Should().BeFalse();
     }

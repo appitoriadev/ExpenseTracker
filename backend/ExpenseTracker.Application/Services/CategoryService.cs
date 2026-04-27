@@ -31,7 +31,7 @@ public class CategoryService : ICategoryService
         }
     }
 
-    public async Task<CategoryDto?> GetByIdAsync(Guid id)
+    public async Task<CategoryDto?> GetByIdAsync(int id)
     {
         try
         {
@@ -94,7 +94,7 @@ public class CategoryService : ICategoryService
         }
     }
 
-    public async Task<CategoryDto?> UpdateAsync(Guid id, UpdateCategoryDto dto)
+    public async Task<CategoryDto?> UpdateAsync(int id, UpdateCategoryDto dto)
     {
         try
         {
@@ -128,7 +128,7 @@ public class CategoryService : ICategoryService
         }
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
         try
         {

@@ -41,7 +41,7 @@ public class DatabaseFixture : IAsyncLifetime
 
         cmd.CommandText = """
             CREATE TABLE IF NOT EXISTS users (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 username VARCHAR(255) NOT NULL UNIQUE,
                 password_hash VARCHAR(255) NOT NULL,
                 firstname VARCHAR(255) NOT NULL,
@@ -53,13 +53,13 @@ public class DatabaseFixture : IAsyncLifetime
             );
 
             CREATE TABLE IF NOT EXISTS categories (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 category_name VARCHAR(255) NOT NULL UNIQUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
             CREATE TABLE IF NOT EXISTS expenses (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 title VARCHAR(255) NOT NULL,
                 amount NUMERIC(18, 2) NOT NULL CHECK (amount > 0),
                 category_name VARCHAR(255) NOT NULL,
@@ -69,9 +69,9 @@ public class DatabaseFixture : IAsyncLifetime
             );
 
             CREATE TABLE IF NOT EXISTS user_expenses (
-                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                expenses_id UUID NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
+                id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                expenses_id INT NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 

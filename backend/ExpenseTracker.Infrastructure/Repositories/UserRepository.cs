@@ -39,7 +39,7 @@ public class UserRepository : IUserRepository
         return users;
     }
 
-    public async Task<User?> GetByIdAsync(Guid id)
+    public async Task<User?> GetByIdAsync(int id)
     {
         using (var connection = _connectionProvider.CreateConnection())
         {
@@ -138,7 +138,7 @@ public class UserRepository : IUserRepository
                 {
                     if (await reader.ReadAsync())
                     {
-                        user.Id = reader.GetGuid(0);
+                        user.Id = reader.GetInt32(0);
                         user.CreatedAt = reader.GetDateTime(1);
                     }
                 }
@@ -181,7 +181,7 @@ public class UserRepository : IUserRepository
         }
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
         using (var connection = _connectionProvider.CreateConnection())
         {
@@ -201,7 +201,7 @@ public class UserRepository : IUserRepository
     private static User MapFromReader(NpgsqlDataReader reader) =>
         new()
         {
-            Id = reader.GetGuid(0),
+            Id = reader.GetInt32(0),
             Username = reader.GetString(1),
             PasswordHash = reader.GetString(2),
             FirstName = reader.GetString(3),

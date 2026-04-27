@@ -27,7 +27,7 @@ public class UserServiceTests
     [Fact]
     public async Task GetByIdAsync_WithValidId_ReturnsUser()
     {
-        var userId = Guid.NewGuid();
+        var userId = 1;
         var user = new User
         {
             Id = userId,
@@ -51,7 +51,7 @@ public class UserServiceTests
     [Fact]
     public async Task GetByIdAsync_WithInvalidId_ReturnsNull()
     {
-        var userId = Guid.NewGuid();
+        var userId = 999;
         _mockRepository.Setup(r => r.GetByIdAsync(userId)).ReturnsAsync((User?)null);
 
         var result = await _service.GetByIdAsync(userId);
@@ -68,7 +68,7 @@ public class UserServiceTests
     {
         var user = new User
         {
-            Id = Guid.NewGuid(),
+            Id = 2,
             Username = "johndoe",
             PasswordHash = "hashedpassword",
             FirstName = "John",
@@ -106,7 +106,7 @@ public class UserServiceTests
 
         var createdUser = new User
         {
-            Id = Guid.NewGuid(),
+            Id = 3,
             Username = dto.Username,
             PasswordHash = "hashed",
             FirstName = dto.FirstName,
@@ -131,7 +131,7 @@ public class UserServiceTests
     [Fact]
     public async Task UpdateAsync_WithValidUser_UpdatesUser()
     {
-        var userId = Guid.NewGuid();
+        var userId = 4;
         var existingUser = new User
         {
             Id = userId,
@@ -171,7 +171,7 @@ public class UserServiceTests
     [Fact]
     public async Task DeleteAsync_WithValidId_DeletesUser()
     {
-        var userId = Guid.NewGuid();
+        var userId = 5;
         _mockRepository.Setup(r => r.DeleteAsync(userId)).ReturnsAsync(true);
 
         var result = await _service.DeleteAsync(userId);
@@ -183,7 +183,7 @@ public class UserServiceTests
     [Fact]
     public async Task DeleteAsync_WithInvalidId_ReturnsFalse()
     {
-        var userId = Guid.NewGuid();
+        var userId = 999;
         _mockRepository.Setup(r => r.DeleteAsync(userId)).ReturnsAsync(false);
 
         var result = await _service.DeleteAsync(userId);

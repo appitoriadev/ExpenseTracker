@@ -1,7 +1,7 @@
 namespace ExpenseTracker.Application.DTOs;
 
 public record CategoryDto(
-    Guid Id,
+    int Id,
     string CategoryName,
     DateTime CreatedAt
 );

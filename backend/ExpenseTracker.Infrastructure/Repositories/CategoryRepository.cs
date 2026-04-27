@@ -39,7 +39,7 @@ public class CategoryRepository : ICategoryRepository
         return categories;
     }
 
-    public async Task<Category?> GetByIdAsync(Guid id)
+    public async Task<Category?> GetByIdAsync(int id)
     {
         using (var connection = _connectionProvider.CreateConnection())
         {
@@ -107,7 +107,7 @@ public class CategoryRepository : ICategoryRepository
                 {
                     if (await reader.ReadAsync())
                     {
-                        category.Id = reader.GetGuid(0);
+                        category.Id = reader.GetInt32(0);
                         category.CreatedAt = reader.GetDateTime(1);
                     }
                 }
@@ -138,7 +138,7 @@ public class CategoryRepository : ICategoryRepository
         }
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
         using (var connection = _connectionProvider.CreateConnection())
         {
@@ -158,7 +158,7 @@ public class CategoryRepository : ICategoryRepository
     private static Category MapFromReader(NpgsqlDataReader reader) =>
         new()
         {
-            Id = reader.GetGuid(0),
+            Id = reader.GetInt32(0),
             CategoryName = reader.GetString(1),
             CreatedAt = reader.GetDateTime(2)
         };

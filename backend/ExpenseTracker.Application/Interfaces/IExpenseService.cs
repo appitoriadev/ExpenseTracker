@@ -5,8 +5,8 @@ namespace ExpenseTracker.Application.Interfaces;
 public interface IExpenseService
 {
     Task<IEnumerable<ExpenseResponseDto>> GetAllAsync();
-    Task<ExpenseResponseDto?> GetByIdAsync(Guid id);
+    Task<ExpenseResponseDto?> GetByIdAsync(int id);
     Task<ExpenseResponseDto> CreateAsync(CreateExpenseDto dto);
-    Task<ExpenseResponseDto?> UpdateAsync(Guid id, UpdateExpenseDto dto);
-    Task<bool> DeleteAsync(Guid id);
+    Task<ExpenseResponseDto?> UpdateAsync(int id, UpdateExpenseDto dto);
+    Task<bool> DeleteAsync(int id);
 }

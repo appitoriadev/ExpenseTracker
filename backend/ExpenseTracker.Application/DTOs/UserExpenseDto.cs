@@ -1,8 +1,8 @@
 namespace ExpenseTracker.Application.DTOs;
 
 public record UserExpenseDto(
-    Guid Id,
-    Guid ExpenseId,
-    Guid UserId,
+    int Id,
+    int ExpenseId,
+    int UserId,
     DateTime CreatedAt
 );

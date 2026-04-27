@@ -31,8 +31,8 @@ public class ExpenseServiceTests
     {
         var expenses = new List<Expense>
         {
-            new() { Id = Guid.NewGuid(), Title = "Lunch", Amount = 15.50m, CategoryName = "Food", Date = DateTime.Now },
-            new() { Id = Guid.NewGuid(), Title = "Gas", Amount = 45.00m, CategoryName = "Transportation", Date = DateTime.Now.AddDays(-1) }
+            new() { Id = 1, Title = "Lunch", Amount = 15.50m, CategoryName = "Food", Date = DateTime.Now },
+            new() { Id = 2, Title = "Gas", Amount = 45.00m, CategoryName = "Transportation", Date = DateTime.Now.AddDays(-1) }
         };
 
         _mockRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(expenses);
@@ -62,7 +62,7 @@ public class ExpenseServiceTests
     [Fact]
     public async Task GetByIdAsync_WithValidId_ReturnsExpense()
     {
-        var id = Guid.NewGuid();
+        var id = 1;
         var expense = new Expense
         {
             Id = id,
@@ -85,7 +85,7 @@ public class ExpenseServiceTests
     [Fact]
     public async Task GetByIdAsync_WithInvalidId_ReturnsNull()
     {
-        var id = Guid.NewGuid();
+        var id = 999;
         _mockRepository.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((Expense?)null);
 
         var result = await _eService.GetByIdAsync(id);
@@ -102,12 +102,12 @@ public class ExpenseServiceTests
     public async Task CreateAsync_WithValidDto_CreatesAndReturnsExpense()
     {
         var dto = new CreateExpenseDto("Coffee", 5.50m, "Food", DateTime.Now);
-        var categoryId = Guid.NewGuid();
+        var categoryId = 10;
         var existingCategory = new CategoryDto(categoryId, "Food", DateTime.Now);
 
         _mockCategoryService.Setup(c => c.GetByNameAsync("Food")).ReturnsAsync(existingCategory);
 
-        var expenseId = Guid.NewGuid();
+        var expenseId = 11;
         var createdExpense = new Expense
         {
             Id = expenseId,
@@ -133,13 +133,13 @@ public class ExpenseServiceTests
     public async Task CreateAsync_WithNonExistentCategory_CreatesCategory()
     {
         var dto = new CreateExpenseDto("Dinner", 45.99m, "Dining", new DateTime(2026, 4, 26));
-        var categoryId = Guid.NewGuid();
+        var categoryId = 20;
 
         _mockCategoryService.Setup(c => c.GetByNameAsync("Dining")).ReturnsAsync((CategoryDto?)null);
         _mockCategoryService.Setup(c => c.CreateAsync(It.IsAny<CreateCategoryDto>()))
             .ReturnsAsync(new CategoryDto(categoryId, "Dining", DateTime.Now));
 
-        var expenseId = Guid.NewGuid();
+        var expenseId = 21;
         var createdExpense = new Expense
         {
             Id = expenseId,
@@ -168,7 +168,7 @@ public class ExpenseServiceTests
     [Fact]
     public async Task UpdateAsync_WithValidExpense_UpdatesAndReturnsExpense()
     {
-        var id = Guid.NewGuid();
+        var id = 30;
         var existingExpense = new Expense { Id = id, Title = "Old Title", Amount = 10m, CategoryName = "Old", Date = DateTime.Now };
         var updateDto = new UpdateExpenseDto("New Title", 20m, "New", DateTime.Now);
         var updatedExpense = new Expense { Id = id, Title = "New Title", Amount = 20m, CategoryName = "New", Date = DateTime.Now };
@@ -188,7 +188,7 @@ public class ExpenseServiceTests
     [Fact]
     public async Task UpdateAsync_WithInvalidId_ReturnsNull()
     {
-        var id = Guid.NewGuid();
+        var id = 999;
         var updateDto = new UpdateExpenseDto("Title", 10m, "Cat", DateTime.Now);
 
         _mockRepository.Setup(r => r.GetByIdAsync(id)).ReturnsAsync((Expense?)null);
@@ -206,7 +206,7 @@ public class ExpenseServiceTests
     [Fact]
     public async Task DeleteAsync_WithValidId_CallsRepositoryDelete()
     {
-        var id = Guid.NewGuid();
+        var id = 40;
         _mockRepository.Setup(r => r.DeleteAsync(id)).ReturnsAsync(true);
 
         var result = await _eService.DeleteAsync(id);
@@ -218,7 +218,7 @@ public class ExpenseServiceTests
     [Fact]
     public async Task DeleteAsync_WithInvalidId_ReturnsFalse()
     {
-        var id = Guid.NewGuid();
+        var id = 999;
         _mockRepository.Setup(r => r.DeleteAsync(id)).ReturnsAsync(false);
 
         var result = await _eService.DeleteAsync(id);

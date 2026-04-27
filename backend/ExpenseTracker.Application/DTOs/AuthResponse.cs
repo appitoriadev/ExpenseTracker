@@ -1,7 +1,7 @@
 namespace ExpenseTracker.Application.DTOs;
 
 public record AuthResponse(
-    Guid UserId,
+    int UserId,
     string Username,
     string Token,
     string RefreshToken,

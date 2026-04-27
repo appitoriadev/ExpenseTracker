@@ -2,8 +2,8 @@ namespace ExpenseTracker.Domain.Entities;
 
 public class UserExpense
 {
-    public Guid Id { get; set; }
-    public Guid ExpenseId { get; set; }
-    public Guid UserId { get; set; }
+    public int Id { get; set; }
+    public int ExpenseId { get; set; }
+    public int UserId { get; set; }
     public DateTime CreatedAt { get; set; }
 }

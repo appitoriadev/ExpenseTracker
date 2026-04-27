@@ -31,7 +31,7 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<UserDto?> GetByIdAsync(Guid id)
+    public async Task<UserDto?> GetByIdAsync(int id)
     {
         try
         {
@@ -94,7 +94,7 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<UserDto?> UpdateAsync(Guid id, UpdateUserDto dto)
+    public async Task<UserDto?> UpdateAsync(int id, UpdateUserDto dto)
     {
         try
         {
@@ -131,7 +131,7 @@ public class UserService : IUserService
         }
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
         try
         {

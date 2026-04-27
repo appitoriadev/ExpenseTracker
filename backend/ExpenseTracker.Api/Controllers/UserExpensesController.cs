@@ -17,18 +17,18 @@ public class UserExpensesController : ControllerBase
         _service = service;
     }
 
-    [HttpGet("by-user/{userId:guid}")]
+    [HttpGet("by-user/{userId:int}")]
     [ProducesResponseType(typeof(IEnumerable<UserExpenseDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetByUserId(Guid userId)
+    public async Task<IActionResult> GetByUserId(int userId)
     {
         var userExpenses = await _service.GetByUserIdAsync(userId);
         return Ok(userExpenses);
     }
 
-    [HttpGet("{id:guid}")]
+    [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(UserExpenseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(int id)
     {
         var userExpense = await _service.GetByIdAsync(id);
         return userExpense is null ? NotFound() : Ok(userExpense);
@@ -42,10 +42,10 @@ public class UserExpensesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
-    [HttpDelete("{id:guid}")]
+    [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _service.DeleteAsync(id);
         return deleted ? NoContent() : NotFound();

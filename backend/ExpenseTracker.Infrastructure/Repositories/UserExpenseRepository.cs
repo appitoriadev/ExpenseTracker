@@ -14,7 +14,7 @@ public class UserExpenseRepository : IUserExpenseRepository
         _connectionProvider = connectionProvider;
     }
 
-    public async Task<IEnumerable<UserExpense>> GetByUserIdAsync(Guid userId)
+    public async Task<IEnumerable<UserExpense>> GetByUserIdAsync(int userId)
     {
         var userExpenses = new List<UserExpense>();
 
@@ -44,7 +44,7 @@ public class UserExpenseRepository : IUserExpenseRepository
         return userExpenses;
     }
 
-    public async Task<UserExpense?> GetByIdAsync(Guid id)
+    public async Task<UserExpense?> GetByIdAsync(int id)
     {
         using (var connection = _connectionProvider.CreateConnection())
         {
@@ -88,7 +88,7 @@ public class UserExpenseRepository : IUserExpenseRepository
                 {
                     if (await reader.ReadAsync())
                     {
-                        userExpense.Id = reader.GetGuid(0);
+                        userExpense.Id = reader.GetInt32(0);
                         userExpense.CreatedAt = reader.GetDateTime(1);
                     }
                 }
@@ -98,7 +98,7 @@ public class UserExpenseRepository : IUserExpenseRepository
         return userExpense;
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
         using (var connection = _connectionProvider.CreateConnection())
         {
@@ -118,9 +118,9 @@ public class UserExpenseRepository : IUserExpenseRepository
     private static UserExpense MapFromReader(NpgsqlDataReader reader) =>
         new()
         {
-            Id = reader.GetGuid(0),
-            ExpenseId = reader.GetGuid(1),
-            UserId = reader.GetGuid(2),
+            Id = reader.GetInt32(0),
+            ExpenseId = reader.GetInt32(1),
+            UserId = reader.GetInt32(2),
             CreatedAt = reader.GetDateTime(3)
         };
 }

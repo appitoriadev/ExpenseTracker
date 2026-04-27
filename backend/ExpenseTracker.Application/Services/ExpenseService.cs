@@ -34,7 +34,7 @@ public class ExpenseService : IExpenseService
         }
     }
 
-    public async Task<ExpenseResponseDto?> GetByIdAsync(Guid id)
+    public async Task<ExpenseResponseDto?> GetByIdAsync(int id)
     {
         try
         {
@@ -96,7 +96,7 @@ public class ExpenseService : IExpenseService
         }
     }
 
-    public async Task<ExpenseResponseDto?> UpdateAsync(Guid id, UpdateExpenseDto dto)
+    public async Task<ExpenseResponseDto?> UpdateAsync(int id, UpdateExpenseDto dto)
     {
         try
         {
@@ -137,7 +137,7 @@ public class ExpenseService : IExpenseService
         }
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
         try
         {

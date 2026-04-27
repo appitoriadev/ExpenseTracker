@@ -17,7 +17,7 @@ public class UserExpenseService : IUserExpenseService
         _logger = logger;
     }
 
-    public async Task<IEnumerable<UserExpenseDto>> GetByUserIdAsync(Guid userId)
+    public async Task<IEnumerable<UserExpenseDto>> GetByUserIdAsync(int userId)
     {
         try
         {
@@ -31,7 +31,7 @@ public class UserExpenseService : IUserExpenseService
         }
     }
 
-    public async Task<UserExpenseDto?> GetByIdAsync(Guid id)
+    public async Task<UserExpenseDto?> GetByIdAsync(int id)
     {
         try
         {
@@ -52,10 +52,10 @@ public class UserExpenseService : IUserExpenseService
             if (dto is null)
                 throw new ArgumentNullException(nameof(dto), "User expense data is required");
 
-            if (dto.ExpenseId == Guid.Empty)
+            if (dto.ExpenseId <= 0)
                 throw new ArgumentException("Expense ID is required", nameof(dto.ExpenseId));
 
-            if (dto.UserId == Guid.Empty)
+            if (dto.UserId <= 0)
                 throw new ArgumentException("User ID is required", nameof(dto.UserId));
 
             var userExpense = new UserExpense
@@ -80,7 +80,7 @@ public class UserExpenseService : IUserExpenseService
         }
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(int id)
     {
         try
         {

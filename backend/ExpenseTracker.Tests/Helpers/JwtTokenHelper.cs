@@ -18,7 +18,7 @@ public static class JwtTokenHelper
 
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, userId ?? Guid.NewGuid().ToString()),
+            new(ClaimTypes.NameIdentifier, userId ?? "1"),
             new(ClaimTypes.Name, "testuser")
         };
 
@@ -44,7 +44,7 @@ public static class JwtTokenHelper
 
         var claims = new List<Claim>
         {
-            new(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+            new(ClaimTypes.NameIdentifier, "1"),
             new(ClaimTypes.Name, "testuser")
         };
 

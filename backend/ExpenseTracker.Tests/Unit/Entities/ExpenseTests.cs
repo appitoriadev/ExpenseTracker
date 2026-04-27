@@ -9,7 +9,7 @@ public class ExpenseTests
     public void Expense_CreatedWithValidValues_ShouldHaveCorrectProperties()
     {
         var date = DateTime.Now;
-        var id = Guid.NewGuid();
+        var id = 1;
         var expense = new Expense
         {
             Id = id,
@@ -31,7 +31,7 @@ public class ExpenseTests
     {
         var expense = new Expense
         {
-            Id = Guid.NewGuid(),
+            Id = 2,
             Title = "Refund",
             Amount = -25.00m,
             CategoryName = "Refunds",
