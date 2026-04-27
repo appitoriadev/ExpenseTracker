@@ -6,7 +6,7 @@ public interface IExpenseService
 {
     Task<IEnumerable<ExpenseResponseDto>> GetAllAsync();
     Task<ExpenseResponseDto?> GetByIdAsync(int id);
-    Task<ExpenseResponseDto> CreateAsync(CreateExpenseDto dto);
+    Task<ExpenseResponseDto> CreateAsync(CreateExpenseDto dto, int userId);
     Task<ExpenseResponseDto?> UpdateAsync(int id, UpdateExpenseDto dto);
     Task<bool> DeleteAsync(int id);
 }

@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using ExpenseTracker.Api.Controllers;
 using ExpenseTracker.Application.DTOs;
 using ExpenseTracker.Application.Interfaces;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 
@@ -16,6 +18,14 @@ public class ExpensesControllerTests
     {
         _mockService = new Mock<IExpenseService>();
         _controller = new ExpensesController(_mockService.Object);
+
+        var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, "1") };
+        var identity = new ClaimsIdentity(claims, "TestAuth");
+        var user = new ClaimsPrincipal(identity);
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext { User = user }
+        };
     }
 
     #region GetAll Tests
@@ -92,7 +102,7 @@ public class ExpensesControllerTests
         var createdId = 10;
         var createdDto = new ExpenseResponseDto(createdId, "New Expense", 100m, "Test", DateTime.Now);
 
-        _mockService.Setup(s => s.CreateAsync(createDto)).ReturnsAsync(createdDto);
+        _mockService.Setup(s => s.CreateAsync(createDto, 1)).ReturnsAsync(createdDto);
 
         var result = await _controller.Create(createDto);
 

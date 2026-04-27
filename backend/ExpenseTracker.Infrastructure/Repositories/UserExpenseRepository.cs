@@ -23,10 +23,16 @@ public class UserExpenseRepository : IUserExpenseRepository
             await connection.OpenAsync();
 
             using (var command = new NpgsqlCommand(
-                @"SELECT id, expenses_id, user_id, created_at
-                  FROM dbo.user_expenses
-                  WHERE user_id = @userId
-                  ORDER BY created_at DESC",
+                @"SELECT ue.id, ue.expense_id, ue.user_id, ue.created_at,
+                         u.username,
+                         e.title, e.amount, e.expense_date,
+                         c.category_name
+                  FROM dbo.user_expenses ue
+                  JOIN dbo.users u ON ue.user_id = u.id
+                  JOIN dbo.expenses e ON ue.expense_id = e.id
+                  JOIN dbo.categories c ON e.category_id = c.id
+                  WHERE ue.user_id = @userId
+                  ORDER BY ue.created_at DESC",
                 connection))
             {
                 command.Parameters.AddWithValue("@userId", userId);
@@ -51,7 +57,15 @@ public class UserExpenseRepository : IUserExpenseRepository
             await connection.OpenAsync();
 
             using (var command = new NpgsqlCommand(
-                "SELECT id, expenses_id, user_id, created_at FROM dbo.user_expenses WHERE id = @id",
+                @"SELECT ue.id, ue.expense_id, ue.user_id, ue.created_at,
+                         u.username,
+                         e.title, e.amount, e.expense_date,
+                         c.category_name
+                  FROM dbo.user_expenses ue
+                  JOIN dbo.users u ON ue.user_id = u.id
+                  JOIN dbo.expenses e ON ue.expense_id = e.id
+                  JOIN dbo.categories c ON e.category_id = c.id
+                  WHERE ue.id = @id",
                 connection))
             {
                 command.Parameters.AddWithValue("@id", id);
@@ -76,7 +90,7 @@ public class UserExpenseRepository : IUserExpenseRepository
             await connection.OpenAsync();
 
             using (var command = new NpgsqlCommand(
-                @"INSERT INTO dbo.user_expenses (expenses_id, user_id)
+                @"INSERT INTO dbo.user_expenses (expense_id, user_id)
                   VALUES (@expenseId, @userId)
                   RETURNING id, created_at",
                 connection))
@@ -118,9 +132,14 @@ public class UserExpenseRepository : IUserExpenseRepository
     private static UserExpense MapFromReader(NpgsqlDataReader reader) =>
         new()
         {
-            Id = reader.GetInt32(0),
-            ExpenseId = reader.GetInt32(1),
-            UserId = reader.GetInt32(2),
-            CreatedAt = reader.GetDateTime(3)
+            Id            = reader.GetInt32(0),
+            ExpenseId     = reader.GetInt32(1),
+            UserId        = reader.GetInt32(2),
+            CreatedAt     = reader.GetDateTime(3),
+            Username      = reader.GetString(4),
+            ExpenseTitle  = reader.GetString(5),
+            ExpenseAmount = reader.GetDecimal(6),
+            ExpenseDate   = reader.GetDateTime(7),
+            CategoryName  = reader.GetString(8)
         };
 }

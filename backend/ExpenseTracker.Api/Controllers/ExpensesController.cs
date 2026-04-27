@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using ExpenseTracker.Application.DTOs;
 using ExpenseTracker.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -42,7 +43,12 @@ public class ExpensesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] CreateExpenseDto dto)
     {
-        var created = await _service.CreateAsync(dto);
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim is null)
+            return Unauthorized();
+
+        var userId = int.Parse(userIdClaim.Value);
+        var created = await _service.CreateAsync(dto, userId);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 

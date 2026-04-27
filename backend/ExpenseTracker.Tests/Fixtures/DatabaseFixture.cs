@@ -48,41 +48,43 @@ public class DatabaseFixture : IAsyncLifetime
                 password_hash VARCHAR(255) NOT NULL,
                 firstname VARCHAR(255) NOT NULL,
                 lastname VARCHAR(255) NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
                 email VARCHAR(255) UNIQUE,
                 refresh_token VARCHAR(512),
-                refresh_token_expiry TIMESTAMP
+                refresh_token_expiry TIMESTAMPTZ
             );
 
             CREATE TABLE IF NOT EXISTS dbo.categories (
                 id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 category_name VARCHAR(255) NOT NULL UNIQUE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
             );
 
             CREATE TABLE IF NOT EXISTS dbo.expenses (
                 id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 title VARCHAR(255) NOT NULL,
                 amount NUMERIC(18, 2) NOT NULL CHECK (amount > 0),
-                category_name VARCHAR(255) NOT NULL,
-                date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                CONSTRAINT fk_categories FOREIGN KEY (category_name) REFERENCES dbo.categories(category_name)
+                category_id INT NOT NULL,
+                expense_date TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT fk_categories FOREIGN KEY (category_id) REFERENCES dbo.categories(id)
             );
 
             CREATE TABLE IF NOT EXISTS dbo.user_expenses (
                 id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-                user_id INT NOT NULL REFERENCES dbo.users(id) ON DELETE CASCADE,
-                expenses_id INT NOT NULL REFERENCES dbo.expenses(id) ON DELETE CASCADE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                expense_id INT NOT NULL,
+                user_id INT NOT NULL,
+                created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES dbo.users(id) ON DELETE CASCADE,
+                CONSTRAINT fk_expense FOREIGN KEY (expense_id) REFERENCES dbo.expenses(id) ON DELETE CASCADE,
+                CONSTRAINT uq_user_expense UNIQUE (user_id, expense_id)
             );
 
-            CREATE INDEX IF NOT EXISTS idx_categories ON dbo.categories(id DESC);
-            CREATE INDEX IF NOT EXISTS idx_expenses_date ON dbo.expenses(date DESC);
-            CREATE INDEX IF NOT EXISTS idx_expenses_category ON dbo.expenses(category_name DESC);
+            CREATE INDEX IF NOT EXISTS idx_expenses_date ON dbo.expenses(expense_date DESC);
+            CREATE INDEX IF NOT EXISTS idx_expenses_category ON dbo.expenses(category_id);
             CREATE INDEX IF NOT EXISTS idx_users_username ON dbo.users(username);
-            CREATE INDEX IF NOT EXISTS idx_userexpenses_ids ON dbo.user_expenses(user_id);
-            CREATE INDEX IF NOT EXISTS idx_expenses_ids ON dbo.user_expenses(expenses_id);
+            CREATE INDEX IF NOT EXISTS idx_userexpenses_user ON dbo.user_expenses(user_id);
+            CREATE INDEX IF NOT EXISTS idx_userexpenses_expense ON dbo.user_expenses(expense_id);
             """;
 
         await cmd.ExecuteNonQueryAsync();

@@ -11,13 +11,15 @@ public class ExpenseService : IExpenseService
 {
     private readonly IExpenseRepository _repository;
     private readonly ICategoryService _categoryService;
+    private readonly IUserExpenseRepository _userExpenseRepository;
     private readonly ILogger<ExpenseService> _logger;
 
-    public ExpenseService(IExpenseRepository repository,ICategoryService categoryService, ILogger<ExpenseService> logger)
+    public ExpenseService(IExpenseRepository repository, ICategoryService categoryService, IUserExpenseRepository userExpenseRepository, ILogger<ExpenseService> logger)
     {
         _repository = repository;
-        _logger = logger;
         _categoryService = categoryService;
+        _userExpenseRepository = userExpenseRepository;
+        _logger = logger;
     }
 
     public async Task<IEnumerable<ExpenseResponseDto>> GetAllAsync()
@@ -48,7 +50,7 @@ public class ExpenseService : IExpenseService
         }
     }
 
-    public async Task<ExpenseResponseDto> CreateAsync(CreateExpenseDto dto)
+    public async Task<ExpenseResponseDto> CreateAsync(CreateExpenseDto dto, int userId)
     {
         try
         {
@@ -76,12 +78,21 @@ public class ExpenseService : IExpenseService
             {
                 Title    = dto.Title,
                 Amount   = dto.Amount,
-                CategoryName = dto.Category,
-                Date     = dto.Date
+                CategoryId = category.Id,
+                Date     = dto.Date,
+                CategoryName = category.CategoryName
             };
 
             var created = await _repository.AddAsync(expense);
-            _logger.LogInformation("Expense created successfully with ID {ExpenseId}", created.Id);
+
+            var userExpense = new UserExpense
+            {
+                ExpenseId = created.Id,
+                UserId = userId
+            };
+            await _userExpenseRepository.AddAsync(userExpense);
+
+            _logger.LogInformation("Expense created successfully with ID {ExpenseId} for user {UserId}", created.Id, userId);
             return MapToResponse(created);
         }
         catch (ArgumentException ex)
@@ -116,10 +127,16 @@ public class ExpenseService : IExpenseService
             if (dto.Amount <= 0)
                 throw new ArgumentException("Amount must be greater than zero", nameof(dto.Amount));
 
+            var category = await _categoryService.GetByNameAsync(dto.Category);
+
+            if (category is null)
+                throw new ArgumentException("An error occurred could not find Category", nameof(dto.Category));
+
             existing.Title    = dto.Title;
             existing.Amount   = dto.Amount;
-            existing.CategoryName = dto.Category;
+            existing.CategoryId = category.Id;
             existing.Date     = dto.Date;
+            existing.CategoryName = dto.Category;
 
             var updated = await _repository.UpdateAsync(existing);
             _logger.LogInformation("Expense with ID {ExpenseId} updated successfully", id);

@@ -13,6 +13,7 @@ public class ExpenseServiceTests
 {
     private readonly Mock<IExpenseRepository> _mockRepository;
     private readonly Mock<ICategoryService> _mockCategoryService;
+    private readonly Mock<IUserExpenseRepository> _mockUserExpenseRepository;
     private readonly Mock<ILogger<ExpenseService>> _mockLogger;
     private readonly IExpenseService _eService;
 
@@ -20,8 +21,9 @@ public class ExpenseServiceTests
     {
         _mockRepository = new Mock<IExpenseRepository>();
         _mockCategoryService = new Mock<ICategoryService>();
+        _mockUserExpenseRepository = new Mock<IUserExpenseRepository>();
         _mockLogger = new Mock<ILogger<ExpenseService>>();
-        _eService = new ExpenseService(_mockRepository.Object, _mockCategoryService.Object, _mockLogger.Object);
+        _eService = new ExpenseService(_mockRepository.Object, _mockCategoryService.Object, _mockUserExpenseRepository.Object, _mockLogger.Object);
     }
 
     #region GetAllAsync Tests
@@ -118,14 +120,16 @@ public class ExpenseServiceTests
         };
 
         _mockRepository.Setup(r => r.AddAsync(It.IsAny<Expense>())).ReturnsAsync(createdExpense);
+        _mockUserExpenseRepository.Setup(r => r.AddAsync(It.IsAny<UserExpense>())).ReturnsAsync(new UserExpense { Id = 1, ExpenseId = expenseId, UserId = 1 });
 
-        var result = await _eService.CreateAsync(dto);
+        var result = await _eService.CreateAsync(dto, 1);
 
         result.Should().NotBeNull();
         result.Title.Should().Be("Coffee");
         result.Amount.Should().Be(5.50m);
         result.Category.Should().Be("Food");
         _mockRepository.Verify(r => r.AddAsync(It.IsAny<Expense>()), Times.Once);
+        _mockUserExpenseRepository.Verify(r => r.AddAsync(It.IsAny<UserExpense>()), Times.Once);
         _mockCategoryService.Verify(c => c.GetByNameAsync("Food"), Times.Once);
     }
 
@@ -150,8 +154,9 @@ public class ExpenseServiceTests
         };
 
         _mockRepository.Setup(r => r.AddAsync(It.IsAny<Expense>())).ReturnsAsync(createdExpense);
+        _mockUserExpenseRepository.Setup(r => r.AddAsync(It.IsAny<UserExpense>())).ReturnsAsync(new UserExpense { Id = 2, ExpenseId = expenseId, UserId = 1 });
 
-        var result = await _eService.CreateAsync(dto);
+        var result = await _eService.CreateAsync(dto, 1);
 
         result.Should().NotBeNull();
         result.Title.Should().Be("Dinner");
@@ -159,6 +164,7 @@ public class ExpenseServiceTests
         _mockCategoryService.Verify(c => c.GetByNameAsync("Dining"), Times.Once);
         _mockCategoryService.Verify(c => c.CreateAsync(It.IsAny<CreateCategoryDto>()), Times.Once);
         _mockRepository.Verify(r => r.AddAsync(It.IsAny<Expense>()), Times.Once);
+        _mockUserExpenseRepository.Verify(r => r.AddAsync(It.IsAny<UserExpense>()), Times.Once);
     }
 
     #endregion

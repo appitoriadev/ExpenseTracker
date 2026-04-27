@@ -99,5 +99,7 @@ public class UserExpenseService : IUserExpenseService
     }
 
     private static UserExpenseDto MapToDto(UserExpense ue) =>
-        new(ue.Id, ue.ExpenseId, ue.UserId, ue.CreatedAt);
+        new(ue.Id, ue.ExpenseId, ue.UserId, ue.CreatedAt,
+            ue.Username, ue.ExpenseTitle, ue.ExpenseAmount,
+            ue.ExpenseDate, ue.CategoryName);
 }
