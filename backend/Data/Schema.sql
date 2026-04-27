@@ -5,7 +5,7 @@ CREATE SCHEMA IF NOT EXISTS dbo;
 
 -- Create categories table
 CREATE TABLE IF NOT EXISTS dbo.categories (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid() ,
+  id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   category_name VARCHAR(255) NOT NULL UNIQUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -15,7 +15,7 @@ CREATE INDEX IF NOT EXISTS idx_categories ON dbo.categories (id DESC);
 
 -- Create expenses table
 CREATE TABLE IF NOT EXISTS dbo.expenses (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
   amount NUMERIC(18, 2) NOT NULL CHECK (amount > 0),
   category_name VARCHAR(255) NOT NULL,
@@ -29,7 +29,7 @@ CREATE INDEX IF NOT EXISTS idx_expenses_date ON dbo.expenses (date DESC);
 
 -- Create users table (for authentication)
 CREATE TABLE IF NOT EXISTS dbo.users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   username VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   firstname VARCHAR(255) NOT NULL,
@@ -45,9 +45,9 @@ CREATE INDEX IF NOT EXISTS idx_users_username ON dbo.users (username);
 
 -- Create relational tables
 CREATE TABLE IF NOT EXISTS dbo.user_expenses (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  expenses_id UUID NOT NULL,
-  user_id UUID NOT NULL,
+  id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  expenses_id INT NOT NULL,
+  user_id INT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES dbo.users (id),
   CONSTRAINT fk_expenses FOREIGN KEY (expenses_id) REFERENCES dbo.expenses (id)

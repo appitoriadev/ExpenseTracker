@@ -156,10 +156,10 @@ dotnet add ExpenseTracker.Tests/ExpenseTracker.Tests.csproj \
 
 ### Domain
 
-**`Entities/Expense.cs`** — Plain POCO: Id (Guid), Title, Amount, CategoryName, Date  
-**`Entities/Category.cs`** — Plain POCO: Id (Guid), CategoryName  
-**`Entities/User.cs`** — Plain POCO: Id (Guid), Username, PasswordHash, FirstName, LastName, Email, RefreshToken, RefreshTokenExpiry  
-**`Entities/UserExpense.cs`** — Junction entity: Id (Guid), ExpensesId (Guid), UserId (Guid)  
+**`Entities/Expense.cs`** — Plain POCO: Id (int), Title, Amount, CategoryName, Date  
+**`Entities/Category.cs`** — Plain POCO: Id (int), CategoryName  
+**`Entities/User.cs`** — Plain POCO: Id (int), Username, PasswordHash, FirstName, LastName, Email, RefreshToken, RefreshTokenExpiry  
+**`Entities/UserExpense.cs`** — Junction entity: Id (int), ExpensesId (int), UserId (int)  
 **`Interfaces/IExpenseRepository.cs`** — GetAll, GetById, Add, Update, Delete, GetByNameAsync (all async)  
 **`Interfaces/ICategoryRepository.cs`** — GetAll, GetById, Add, Update, Delete, GetByNameAsync (all async)  
 **`Interfaces/IUserRepository.cs`** — GetAll, GetById, Add, Update, Delete, GetByUsername (all async)  
@@ -212,13 +212,13 @@ Create tables via SQL script in `Infrastructure/Data/Schema.sql`:
 CREATE SCHEMA IF NOT EXISTS dbo;
 
 CREATE TABLE IF NOT EXISTS dbo.categories (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   category_name VARCHAR(255) NOT NULL UNIQUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS dbo.expenses (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
   amount NUMERIC(18, 2) NOT NULL CHECK (amount > 0),
   category_name VARCHAR(255) NOT NULL,
@@ -228,7 +228,7 @@ CREATE TABLE IF NOT EXISTS dbo.expenses (
 );
 
 CREATE TABLE IF NOT EXISTS dbo.users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   username VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   firstname VARCHAR(255) NOT NULL,
@@ -240,9 +240,9 @@ CREATE TABLE IF NOT EXISTS dbo.users (
 );
 
 CREATE TABLE IF NOT EXISTS dbo.user_expenses (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  expenses_id UUID NOT NULL,
-  user_id UUID NOT NULL,
+  id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  expenses_id INT NOT NULL,
+  user_id INT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES dbo.users (id),
   CONSTRAINT fk_expenses FOREIGN KEY (expenses_id) REFERENCES dbo.expenses (id)
