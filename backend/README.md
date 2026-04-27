@@ -86,14 +86,23 @@ ExpenseTracker.Tests          → References all projects
    ```
 
 2. Start services:
+
    ```bash
    docker-compose up -d
+   ```
+   
+   If you are planning on having a `docker-compose.override.yml` file then you may need a diferent command, something along the lines of:
+
+   ```bash
+   docker compose -f ./docker-compose.yml -f ./docker-compose.override.yml --env-file ./.env.local up -d
    ```
 
 3. Access the API:
    - HTTP: `http://localhost:5157`
    - HTTPS: `http://localhost:5158`
    - PostgreSQL: `localhost:5432`
+
+> **⚠️ Windows Users:** The `docker-compose.yml` uses `${HOME}` for the PostgreSQL data volume path. On Windows, replace `${HOME}` with `${USERPROFILE}` or use an absolute path like `C:/Users/<YourUsername>/balastlane_data/postgres:/var/lib/postgresql/data`.
 
 ## Environment Variables
 
