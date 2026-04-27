@@ -4,6 +4,7 @@ using ExpenseTracker.Application.Services;
 using ExpenseTracker.Domain.Entities;
 using ExpenseTracker.Domain.Interfaces;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace ExpenseTracker.Tests.Unit.Services;
@@ -11,12 +12,14 @@ namespace ExpenseTracker.Tests.Unit.Services;
 public class UserServiceTests
 {
     private readonly Mock<IUserRepository> _mockRepository;
+    private readonly Mock<ILogger<UserService>> _mockLogger;
     private readonly IUserService _service;
 
     public UserServiceTests()
     {
         _mockRepository = new Mock<IUserRepository>();
-        _service = new UserService(_mockRepository.Object);
+        _mockLogger = new Mock<ILogger<UserService>>();
+        _service = new UserService(_mockRepository.Object, _mockLogger.Object);
     }
 
     #region GetByIdAsync Tests

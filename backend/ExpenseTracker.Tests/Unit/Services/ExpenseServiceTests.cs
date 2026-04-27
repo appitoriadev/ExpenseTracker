@@ -4,6 +4,7 @@ using ExpenseTracker.Application.Services;
 using ExpenseTracker.Domain.Entities;
 using ExpenseTracker.Domain.Interfaces;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace ExpenseTracker.Tests.Unit.Services;
@@ -11,12 +12,16 @@ namespace ExpenseTracker.Tests.Unit.Services;
 public class ExpenseServiceTests
 {
     private readonly Mock<IExpenseRepository> _mockRepository;
-    private readonly IExpenseService _service;
+    private readonly Mock<ICategoryService> _mockCategoryService;
+    private readonly Mock<ILogger<ExpenseService>> _mockLogger;
+    private readonly IExpenseService _eService;
 
     public ExpenseServiceTests()
     {
         _mockRepository = new Mock<IExpenseRepository>();
-        _service = new ExpenseService(_mockRepository.Object);
+        _mockCategoryService = new Mock<ICategoryService>();
+        _mockLogger = new Mock<ILogger<ExpenseService>>();
+        _eService = new ExpenseService(_mockRepository.Object, _mockCategoryService.Object, _mockLogger.Object);
     }
 
     #region GetAllAsync Tests
@@ -32,7 +37,7 @@ public class ExpenseServiceTests
 
         _mockRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(expenses);
 
-        var result = await _service.GetAllAsync();
+        var result = await _eService.GetAllAsync();
 
         result.Should().HaveCount(2);
         result.First().Title.Should().Be("Lunch");
@@ -44,7 +49,7 @@ public class ExpenseServiceTests
     {
         _mockRepository.Setup(r => r.GetAllAsync()).ReturnsAsync(new List<Expense>());
 
-        var result = await _service.GetAllAsync();
+        var result = await _eService.GetAllAsync();
 
         result.Should().BeEmpty();
         _mockRepository.Verify(r => r.GetAllAsync(), Times.Once);
@@ -68,7 +73,7 @@ public class ExpenseServiceTests
 
         _mockRepository.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(expense);
 
-        var result = await _service.GetByIdAsync(1);
+        var result = await _eService.GetByIdAsync(1);
 
         result.Should().NotBeNull();
         result!.Title.Should().Be("Lunch");
@@ -81,7 +86,7 @@ public class ExpenseServiceTests
     {
         _mockRepository.Setup(r => r.GetByIdAsync(999)).ReturnsAsync((Expense?)null);
 
-        var result = await _service.GetByIdAsync(999);
+        var result = await _eService.GetByIdAsync(999);
 
         result.Should().BeNull();
         _mockRepository.Verify(r => r.GetByIdAsync(999), Times.Once);
@@ -95,44 +100,61 @@ public class ExpenseServiceTests
     public async Task CreateAsync_WithValidDto_CreatesAndReturnsExpense()
     {
         var dto = new CreateExpenseDto("Coffee", 5.50m, "Food", DateTime.Now);
+        var categoryId = Guid.NewGuid();
+        var existingCategory = new CategoryDto(categoryId, "Food", DateTime.Now);
+
+        _mockCategoryService.Setup(c => c.GetByNameAsync("Food")).ReturnsAsync(existingCategory);
 
         var createdExpense = new Expense
         {
             Id = 1,
             Title = dto.Title,
             Amount = dto.Amount,
-            Category = dto.Category,
+            Category = categoryId.ToString(),
             Date = dto.Date
         };
 
         _mockRepository.Setup(r => r.AddAsync(It.IsAny<Expense>())).ReturnsAsync(createdExpense);
 
-        var result = await _service.CreateAsync(dto);
+        var result = await _eService.CreateAsync(dto);
 
         result.Should().NotBeNull();
         result.Title.Should().Be("Coffee");
         result.Amount.Should().Be(5.50m);
-        result.Category.Should().Be("Food");
+        result.Category.Should().Be(categoryId.ToString());
         _mockRepository.Verify(r => r.AddAsync(It.IsAny<Expense>()), Times.Once);
+        _mockCategoryService.Verify(c => c.GetByNameAsync("Food"), Times.Once);
     }
 
     [Fact]
-    public async Task CreateAsync_MapsPropertiesCorrectly()
+    public async Task CreateAsync_WithNonExistentCategory_CreatesCategory()
     {
         var dto = new CreateExpenseDto("Dinner", 45.99m, "Dining", new DateTime(2026, 4, 26));
+        var categoryId = Guid.NewGuid();
 
-        Expense? capturedExpense = null;
-        _mockRepository.Setup(r => r.AddAsync(It.IsAny<Expense>()))
-            .Callback<Expense>(e => capturedExpense = e)
-            .ReturnsAsync(new Expense { Id = 1, Title = dto.Title, Amount = dto.Amount, Category = dto.Category, Date = dto.Date });
+        _mockCategoryService.Setup(c => c.GetByNameAsync("Dining")).ReturnsAsync((CategoryDto?)null);
+        _mockCategoryService.Setup(c => c.CreateAsync(It.IsAny<CreateCategoryDto>()))
+            .ReturnsAsync(new CategoryDto(categoryId, "Dining", DateTime.Now));
 
-        await _service.CreateAsync(dto);
+        var createdExpense = new Expense
+        {
+            Id = 1,
+            Title = dto.Title,
+            Amount = dto.Amount,
+            Category = categoryId.ToString(),
+            Date = dto.Date
+        };
 
-        capturedExpense.Should().NotBeNull();
-        capturedExpense!.Title.Should().Be(dto.Title);
-        capturedExpense.Amount.Should().Be(dto.Amount);
-        capturedExpense.Category.Should().Be(dto.Category);
-        capturedExpense.Date.Should().Be(dto.Date);
+        _mockRepository.Setup(r => r.AddAsync(It.IsAny<Expense>())).ReturnsAsync(createdExpense);
+
+        var result = await _eService.CreateAsync(dto);
+
+        result.Should().NotBeNull();
+        result.Title.Should().Be("Dinner");
+        result.Amount.Should().Be(45.99m);
+        _mockCategoryService.Verify(c => c.GetByNameAsync("Dining"), Times.Once);
+        _mockCategoryService.Verify(c => c.CreateAsync(It.IsAny<CreateCategoryDto>()), Times.Once);
+        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Expense>()), Times.Once);
     }
 
     #endregion
@@ -149,7 +171,7 @@ public class ExpenseServiceTests
         _mockRepository.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(existingExpense);
         _mockRepository.Setup(r => r.UpdateAsync(It.IsAny<Expense>())).ReturnsAsync(updatedExpense);
 
-        var result = await _service.UpdateAsync(1, updateDto);
+        var result = await _eService.UpdateAsync(1, updateDto);
 
         result.Should().NotBeNull();
         result!.Title.Should().Be("New Title");
@@ -165,7 +187,7 @@ public class ExpenseServiceTests
 
         _mockRepository.Setup(r => r.GetByIdAsync(999)).ReturnsAsync((Expense?)null);
 
-        var result = await _service.UpdateAsync(999, updateDto);
+        var result = await _eService.UpdateAsync(999, updateDto);
 
         result.Should().BeNull();
         _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Expense>()), Times.Never);
@@ -180,7 +202,7 @@ public class ExpenseServiceTests
     {
         _mockRepository.Setup(r => r.DeleteAsync(1)).ReturnsAsync(true);
 
-        var result = await _service.DeleteAsync(1);
+        var result = await _eService.DeleteAsync(1);
 
         result.Should().BeTrue();
         _mockRepository.Verify(r => r.DeleteAsync(1), Times.Once);
@@ -191,7 +213,7 @@ public class ExpenseServiceTests
     {
         _mockRepository.Setup(r => r.DeleteAsync(999)).ReturnsAsync(false);
 
-        var result = await _service.DeleteAsync(999);
+        var result = await _eService.DeleteAsync(999);
 
         result.Should().BeFalse();
     }
