@@ -1,4 +1,4 @@
-# BalastLane Backend
+# Expense Tracker
 
 REST API for expense tracking with user authentication, built with .NET 10.0 and PostgreSQL.
 
@@ -102,7 +102,7 @@ ExpenseTracker.Tests          → References all projects
    - HTTPS: `http://localhost:5158`
    - PostgreSQL: `localhost:5432`
 
-> **⚠️ Windows Users:** The `docker-compose.yml` uses `${HOME}` for the PostgreSQL data volume path. On Windows, replace `${HOME}` with `${USERPROFILE}` or use an absolute path like `C:/Users/<YourUsername>/balastlane_data/postgres:/var/lib/postgresql/data`.
+> **⚠️ Windows Users:** The `docker-compose.yml` uses `${HOME}` for the PostgreSQL data volume path. On Windows, replace `${HOME}` with `${USERPROFILE}` or use an absolute path like `C:/Users/<YourUsername>/expensetracker_data/postgres:/var/lib/postgresql/data`.
 
 ## Environment Variables
 
