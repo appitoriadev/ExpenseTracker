@@ -25,8 +25,8 @@ public class ExpensesControllerTests
     {
         var expenses = new List<ExpenseResponseDto>
         {
-            new(1, "Lunch", 15.50m, "Food", DateTime.Now),
-            new(2, "Gas", 45.00m, "Transportation", DateTime.Now)
+            new(Guid.NewGuid(), "Lunch", 15.50m, "Food", DateTime.Now),
+            new(Guid.NewGuid(), "Gas", 45.00m, "Transportation", DateTime.Now)
         };
 
         _mockService.Setup(s => s.GetAllAsync()).ReturnsAsync(expenses);
@@ -58,10 +58,11 @@ public class ExpensesControllerTests
     [Fact]
     public async Task GetById_WithValidId_ReturnsOkWithExpense()
     {
-        var expense = new ExpenseResponseDto(1, "Coffee", 5.50m, "Food", DateTime.Now);
-        _mockService.Setup(s => s.GetByIdAsync(1)).ReturnsAsync(expense);
+        var id = Guid.NewGuid();
+        var expense = new ExpenseResponseDto(id, "Coffee", 5.50m, "Food", DateTime.Now);
+        _mockService.Setup(s => s.GetByIdAsync(id)).ReturnsAsync(expense);
 
-        var result = await _controller.GetById(1);
+        var result = await _controller.GetById(id);
 
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
         okResult.StatusCode.Should().Be(200);
@@ -72,9 +73,10 @@ public class ExpensesControllerTests
     [Fact]
     public async Task GetById_WithInvalidId_ReturnsNotFound()
     {
-        _mockService.Setup(s => s.GetByIdAsync(999)).ReturnsAsync((ExpenseResponseDto?)null);
+        var id = Guid.NewGuid();
+        _mockService.Setup(s => s.GetByIdAsync(id)).ReturnsAsync((ExpenseResponseDto?)null);
 
-        var result = await _controller.GetById(999);
+        var result = await _controller.GetById(id);
 
         result.Should().BeOfType<NotFoundResult>();
     }
@@ -87,7 +89,8 @@ public class ExpensesControllerTests
     public async Task Create_WithValidDto_ReturnsCreatedAtActionWith201()
     {
         var createDto = new CreateExpenseDto("New Expense", 100m, "Test", DateTime.Now);
-        var createdDto = new ExpenseResponseDto(1, "New Expense", 100m, "Test", DateTime.Now);
+        var createdId = Guid.NewGuid();
+        var createdDto = new ExpenseResponseDto(createdId, "New Expense", 100m, "Test", DateTime.Now);
 
         _mockService.Setup(s => s.CreateAsync(createDto)).ReturnsAsync(createdDto);
 
@@ -97,7 +100,7 @@ public class ExpensesControllerTests
         createdResult.StatusCode.Should().Be(201);
         createdResult.ActionName.Should().Be(nameof(ExpensesController.GetById));
         var returnedExpense = createdResult.Value.Should().BeOfType<ExpenseResponseDto>().Subject;
-        returnedExpense.Id.Should().Be(1);
+        returnedExpense.Id.Should().Be(createdId);
     }
 
     #endregion
@@ -107,12 +110,13 @@ public class ExpensesControllerTests
     [Fact]
     public async Task Update_WithValidId_ReturnsOkWithUpdatedExpense()
     {
+        var id = Guid.NewGuid();
         var updateDto = new UpdateExpenseDto("Updated", 200m, "Updated", DateTime.Now);
-        var updatedDto = new ExpenseResponseDto(1, "Updated", 200m, "Updated", DateTime.Now);
+        var updatedDto = new ExpenseResponseDto(id, "Updated", 200m, "Updated", DateTime.Now);
 
-        _mockService.Setup(s => s.UpdateAsync(1, updateDto)).ReturnsAsync(updatedDto);
+        _mockService.Setup(s => s.UpdateAsync(id, updateDto)).ReturnsAsync(updatedDto);
 
-        var result = await _controller.Update(1, updateDto);
+        var result = await _controller.Update(id, updateDto);
 
         var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
         okResult.StatusCode.Should().Be(200);
@@ -121,11 +125,12 @@ public class ExpensesControllerTests
     [Fact]
     public async Task Update_WithInvalidId_ReturnsNotFound()
     {
+        var id = Guid.NewGuid();
         var updateDto = new UpdateExpenseDto("Updated", 200m, "Updated", DateTime.Now);
 
-        _mockService.Setup(s => s.UpdateAsync(999, updateDto)).ReturnsAsync((ExpenseResponseDto?)null);
+        _mockService.Setup(s => s.UpdateAsync(id, updateDto)).ReturnsAsync((ExpenseResponseDto?)null);
 
-        var result = await _controller.Update(999, updateDto);
+        var result = await _controller.Update(id, updateDto);
 
         result.Should().BeOfType<NotFoundResult>();
     }
@@ -137,9 +142,10 @@ public class ExpensesControllerTests
     [Fact]
     public async Task Delete_WithValidId_ReturnsNoContent()
     {
-        _mockService.Setup(s => s.DeleteAsync(1)).ReturnsAsync(true);
+        var id = Guid.NewGuid();
+        _mockService.Setup(s => s.DeleteAsync(id)).ReturnsAsync(true);
 
-        var result = await _controller.Delete(1);
+        var result = await _controller.Delete(id);
 
         result.Should().BeOfType<NoContentResult>();
     }
@@ -147,9 +153,10 @@ public class ExpensesControllerTests
     [Fact]
     public async Task Delete_WithInvalidId_ReturnsNotFound()
     {
-        _mockService.Setup(s => s.DeleteAsync(999)).ReturnsAsync(false);
+        var id = Guid.NewGuid();
+        _mockService.Setup(s => s.DeleteAsync(id)).ReturnsAsync(false);
 
-        var result = await _controller.Delete(999);
+        var result = await _controller.Delete(id);
 
         result.Should().BeOfType<NotFoundResult>();
     }

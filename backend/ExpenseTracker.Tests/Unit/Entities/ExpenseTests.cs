@@ -9,19 +9,20 @@ public class ExpenseTests
     public void Expense_CreatedWithValidValues_ShouldHaveCorrectProperties()
     {
         var date = DateTime.Now;
+        var id = Guid.NewGuid();
         var expense = new Expense
         {
-            Id = 1,
+            Id = id,
             Title = "Test Expense",
             Amount = 50.00m,
-            Category = "Testing",
+            CategoryName = "Testing",
             Date = date
         };
 
-        expense.Id.Should().Be(1);
+        expense.Id.Should().Be(id);
         expense.Title.Should().Be("Test Expense");
         expense.Amount.Should().Be(50.00m);
-        expense.Category.Should().Be("Testing");
+        expense.CategoryName.Should().Be("Testing");
         expense.Date.Should().Be(date);
     }
 
@@ -30,10 +31,10 @@ public class ExpenseTests
     {
         var expense = new Expense
         {
-            Id = 1,
+            Id = Guid.NewGuid(),
             Title = "Refund",
             Amount = -25.00m,
-            Category = "Refunds",
+            CategoryName = "Refunds",
             Date = DateTime.Now
         };
 
@@ -46,7 +47,7 @@ public class ExpenseTests
         var expense = new Expense();
 
         expense.Title.Should().Be(string.Empty);
-        expense.Category.Should().Be(string.Empty);
+        expense.CategoryName.Should().Be(string.Empty);
     }
 
     [Fact]

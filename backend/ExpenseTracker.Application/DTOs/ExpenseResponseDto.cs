@@ -1,7 +1,7 @@
 namespace ExpenseTracker.Application.DTOs;
 
 public record ExpenseResponseDto(
-    int Id,
+    Guid Id,
     string Title,
     decimal Amount,
     string Category,

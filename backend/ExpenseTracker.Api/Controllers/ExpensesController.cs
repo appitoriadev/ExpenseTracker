@@ -27,10 +27,10 @@ public class ExpensesController : ControllerBase
     }
 
     /// <summary>Returns a single expense by ID.</summary>
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:Guid}")]
     [ProducesResponseType(typeof(ExpenseResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(Guid id)
     {
         var expense = await _service.GetByIdAsync(id);
         return expense is null ? NotFound() : Ok(expense);
@@ -47,20 +47,20 @@ public class ExpensesController : ControllerBase
     }
 
     /// <summary>Updates an existing expense.</summary>
-    [HttpPut("{id:int}")]
+    [HttpPut("{id:Guid}")]
     [ProducesResponseType(typeof(ExpenseResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateExpenseDto dto)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateExpenseDto dto)
     {
         var updated = await _service.UpdateAsync(id, dto);
         return updated is null ? NotFound() : Ok(updated);
     }
 
     /// <summary>Deletes an expense by ID.</summary>
-    [HttpDelete("{id:int}")]
+    [HttpDelete("{id:Guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(Guid id)
     {
         var deleted = await _service.DeleteAsync(id);
         return deleted ? NoContent() : NotFound();

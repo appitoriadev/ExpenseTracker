@@ -34,7 +34,7 @@ public class ExpenseService : IExpenseService
         }
     }
 
-    public async Task<ExpenseResponseDto?> GetByIdAsync(int id)
+    public async Task<ExpenseResponseDto?> GetByIdAsync(Guid id)
     {
         try
         {
@@ -71,14 +71,12 @@ public class ExpenseService : IExpenseService
                 var categoryDto = new CreateCategoryDto(dto.Category);
                 category = await _categoryService.CreateAsync(categoryDto);
             }
-
-            var catId = category != null ? category.Id.ToString(): throw new ArgumentException("Category is required", nameof(dto.Category));
-
+            
             var expense = new Expense
             {
                 Title    = dto.Title,
                 Amount   = dto.Amount,
-                Category = catId,
+                CategoryName = dto.Category,
                 Date     = dto.Date
             };
 
@@ -98,7 +96,7 @@ public class ExpenseService : IExpenseService
         }
     }
 
-    public async Task<ExpenseResponseDto?> UpdateAsync(int id, UpdateExpenseDto dto)
+    public async Task<ExpenseResponseDto?> UpdateAsync(Guid id, UpdateExpenseDto dto)
     {
         try
         {
@@ -120,7 +118,7 @@ public class ExpenseService : IExpenseService
 
             existing.Title    = dto.Title;
             existing.Amount   = dto.Amount;
-            existing.Category = dto.Category;
+            existing.CategoryName = dto.Category;
             existing.Date     = dto.Date;
 
             var updated = await _repository.UpdateAsync(existing);
@@ -139,7 +137,7 @@ public class ExpenseService : IExpenseService
         }
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(Guid id)
     {
         try
         {
@@ -158,5 +156,5 @@ public class ExpenseService : IExpenseService
     }
 
     private static ExpenseResponseDto MapToResponse(Expense e) =>
-        new(e.Id, e.Title, e.Amount, e.Category, e.Date);
+        new(e.Id, e.Title, e.Amount, e.CategoryName, e.Date);
 }

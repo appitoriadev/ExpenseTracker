@@ -3,6 +3,7 @@ using ExpenseTracker.Infrastructure.Data;
 using ExpenseTracker.Infrastructure.Repositories;
 using ExpenseTracker.Tests.Fixtures;
 using FluentAssertions;
+using Npgsql;
 
 namespace ExpenseTracker.Tests.Integration.Repositories;
 
@@ -11,6 +12,8 @@ public class ExpenseRepositoryTests : IAsyncLifetime
 {
     private readonly DatabaseFixture _fixture;
     private ExpenseRepository _repository = null!;
+    private static Guid guid;
+    private NpgsqlConnection _connection = null!;
 
     public ExpenseRepositoryTests(DatabaseFixture fixture)
     {
@@ -21,9 +24,41 @@ public class ExpenseRepositoryTests : IAsyncLifetime
     {
         var connectionProvider = new ConnectionProvider(_fixture.ConnectionString);
         _repository = new ExpenseRepository(connectionProvider);
+        guid = Guid.NewGuid();
+
+        _connection = new NpgsqlConnection(_fixture.ConnectionString);
+        await _connection.OpenAsync();
+        await CreateCategories();
     }
 
-    public Task DisposeAsync() => Task.CompletedTask;
+    private async Task CreateCategories()
+    {
+        var categories = new[] { "Testing", "Cat1", "Cat2", "Cat3", "Cat", "Test", "OrigCat", "UpdatedCat" };
+
+        foreach (var cat in categories)
+        {
+            try
+            {
+                using var cmd = _connection.CreateCommand();
+                cmd.CommandText = "INSERT INTO categories (category_name) VALUES (@name) ON CONFLICT DO NOTHING";
+                cmd.Parameters.AddWithValue("@name", cat);
+                await cmd.ExecuteNonQueryAsync();
+            }
+            catch
+            {
+                // Category might already exist
+            }
+        }
+    }
+
+    public async Task DisposeAsync()
+    {
+        if (_connection?.State == System.Data.ConnectionState.Open)
+        {
+            await _connection.CloseAsync();
+        }
+        _connection?.Dispose();
+    }
 
     #region AddAsync Tests
 
@@ -34,14 +69,14 @@ public class ExpenseRepositoryTests : IAsyncLifetime
         {
             Title = "Test Expense",
             Amount = 99.99m,
-            Category = "Testing",
+            CategoryName = "Testing",
             Date = DateTime.Now
         };
 
         var result = await _repository.AddAsync(expense);
 
         result.Should().NotBeNull();
-        result.Id.Should().BeGreaterThan(0);
+        result.Id.Should().NotBeEmpty();
         result.Title.Should().Be("Test Expense");
         result.Amount.Should().Be(99.99m);
     }
@@ -51,9 +86,9 @@ public class ExpenseRepositoryTests : IAsyncLifetime
     {
         var expenses = new[]
         {
-            new Expense { Title = "Exp 1", Amount = 10m, Category = "Cat1", Date = DateTime.Now },
-            new Expense { Title = "Exp 2", Amount = 20m, Category = "Cat2", Date = DateTime.Now },
-            new Expense { Title = "Exp 3", Amount = 30m, Category = "Cat3", Date = DateTime.Now }
+            new Expense { Title = "Exp 1", Amount = 10m, CategoryName = "Cat1", Date = DateTime.Now },
+            new Expense { Title = "Exp 2", Amount = 20m, CategoryName = "Cat2", Date = DateTime.Now },
+            new Expense { Title = "Exp 3", Amount = 30m, CategoryName = "Cat3", Date = DateTime.Now }
         };
 
         var results = new List<Expense>();
@@ -63,7 +98,7 @@ public class ExpenseRepositoryTests : IAsyncLifetime
         }
 
         results.Should().HaveCount(3);
-        results.Should().AllSatisfy(r => r.Id.Should().BeGreaterThan(0));
+        results.Should().AllSatisfy(r => r.Id.Should().NotBeEmpty());
     }
 
     #endregion
@@ -73,12 +108,14 @@ public class ExpenseRepositoryTests : IAsyncLifetime
     [Fact]
     public async Task GetAllAsync_WithMultipleExpenses_ReturnsAllOrderedByDateDesc()
     {
+        await ClearExpenses();
+
         var now = DateTime.Now;
         var expenses = new[]
         {
-            new Expense { Title = "Old", Amount = 10m, Category = "Cat", Date = now.AddDays(-2) },
-            new Expense { Title = "New", Amount = 20m, Category = "Cat", Date = now },
-            new Expense { Title = "Middle", Amount = 15m, Category = "Cat", Date = now.AddDays(-1) }
+            new Expense { Title = "Old", Amount = 10m, CategoryName = "Cat", Date = now.AddDays(-2) },
+            new Expense { Title = "New", Amount = 20m, CategoryName = "Cat", Date = now },
+            new Expense { Title = "Middle", Amount = 15m, CategoryName = "Cat", Date = now.AddDays(-1) }
         };
 
         foreach (var exp in expenses)
@@ -88,7 +125,7 @@ public class ExpenseRepositoryTests : IAsyncLifetime
 
         var result = (await _repository.GetAllAsync()).ToList();
 
-        result.Should().HaveCountGreaterThanOrEqualTo(3);
+        result.Should().HaveCount(3);
         result.First().Title.Should().Be("New");
         result.Should().BeInDescendingOrder(e => e.Date);
     }
@@ -96,9 +133,17 @@ public class ExpenseRepositoryTests : IAsyncLifetime
     [Fact]
     public async Task GetAllAsync_WithEmptyDatabase_ReturnsEmpty()
     {
+        await ClearExpenses();
         var result = await _repository.GetAllAsync();
 
         result.Should().BeEmpty();
+    }
+
+    private async Task ClearExpenses()
+    {
+        using var cmd = _connection.CreateCommand();
+        cmd.CommandText = "DELETE FROM expenses";
+        await cmd.ExecuteNonQueryAsync();
     }
 
     #endregion
@@ -112,7 +157,7 @@ public class ExpenseRepositoryTests : IAsyncLifetime
         {
             Title = "Find Me",
             Amount = 55m,
-            Category = "Test",
+            CategoryName = "Test",
             Date = DateTime.Now
         };
 
@@ -127,7 +172,7 @@ public class ExpenseRepositoryTests : IAsyncLifetime
     [Fact]
     public async Task GetByIdAsync_WithInvalidId_ReturnsNull()
     {
-        var result = await _repository.GetByIdAsync(99999);
+        var result = await _repository.GetByIdAsync(new Guid());
 
         result.Should().BeNull();
     }
@@ -143,7 +188,7 @@ public class ExpenseRepositoryTests : IAsyncLifetime
         {
             Title = "Original",
             Amount = 10m,
-            Category = "OrigCat",
+            CategoryName = "OrigCat",
             Date = DateTime.Now
         };
 
@@ -151,7 +196,7 @@ public class ExpenseRepositoryTests : IAsyncLifetime
 
         created.Title = "Updated";
         created.Amount = 25m;
-        created.Category = "UpdatedCat";
+        created.CategoryName = "UpdatedCat";
         created.Date = DateTime.Now.AddDays(1);
 
         var result = await _repository.UpdateAsync(created);
@@ -159,7 +204,7 @@ public class ExpenseRepositoryTests : IAsyncLifetime
         result.Should().NotBeNull();
         result!.Title.Should().Be("Updated");
         result.Amount.Should().Be(25m);
-        result.Category.Should().Be("UpdatedCat");
+        result.CategoryName.Should().Be("UpdatedCat");
 
         var retrieved = await _repository.GetByIdAsync(created.Id);
         retrieved!.Title.Should().Be("Updated");
@@ -170,10 +215,10 @@ public class ExpenseRepositoryTests : IAsyncLifetime
     {
         var expense = new Expense
         {
-            Id = 99999,
+            Id = new Guid(),
             Title = "Ghost",
             Amount = 10m,
-            Category = "Cat",
+            CategoryName = "Cat",
             Date = DateTime.Now
         };
 
@@ -193,7 +238,7 @@ public class ExpenseRepositoryTests : IAsyncLifetime
         {
             Title = "Delete Me",
             Amount = 10m,
-            Category = "Test",
+            CategoryName = "Test",
             Date = DateTime.Now
         };
 
@@ -209,7 +254,7 @@ public class ExpenseRepositoryTests : IAsyncLifetime
     [Fact]
     public async Task DeleteAsync_WithInvalidId_ReturnsFalse()
     {
-        var result = await _repository.DeleteAsync(99999);
+        var result = await _repository.DeleteAsync(Guid.NewGuid());
 
         result.Should().BeFalse();
     }

@@ -73,9 +73,14 @@ public class CategoryService : ICategoryService
                 CategoryName = dto.CategoryName.Trim()
             };
 
-            var created = await _repository.AddAsync(category);
-            _logger.LogInformation("Category created successfully with ID {CategoryId}", created.Id);
-            return MapToDto(created);
+            var exists = await _repository.GetByNameAsync(dto.CategoryName);
+            if (exists is null)
+            {
+                var created = await _repository.AddAsync(category);
+                _logger.LogInformation("Category created successfully with ID {CategoryId}", created.Id);
+                return MapToDto(created);
+            }
+            return MapToDto(exists);
         }
         catch (ArgumentException ex)
         {

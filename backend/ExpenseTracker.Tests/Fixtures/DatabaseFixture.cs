@@ -44,36 +44,43 @@ public class DatabaseFixture : IAsyncLifetime
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 username VARCHAR(255) NOT NULL UNIQUE,
                 password_hash VARCHAR(255) NOT NULL,
-                first_name VARCHAR(255),
-                last_name VARCHAR(255),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                firstname VARCHAR(255) NOT NULL,
+                lastname VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                email VARCHAR(255) UNIQUE,
+                refresh_token VARCHAR(512),
+                refresh_token_expiry TIMESTAMP
             );
 
             CREATE TABLE IF NOT EXISTS categories (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                name VARCHAR(100) NOT NULL UNIQUE,
-                description TEXT,
+                category_name VARCHAR(255) NOT NULL UNIQUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
             CREATE TABLE IF NOT EXISTS expenses (
-                id SERIAL PRIMARY KEY,
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 title VARCHAR(255) NOT NULL,
-                amount NUMERIC(18, 2) NOT NULL,
-                category VARCHAR(100) NOT NULL,
+                amount NUMERIC(18, 2) NOT NULL CHECK (amount > 0),
+                category_name VARCHAR(255) NOT NULL,
                 date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT fk_categories FOREIGN KEY (category_name) REFERENCES categories(category_name)
             );
 
             CREATE TABLE IF NOT EXISTS user_expenses (
                 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                 user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-                expense_id INT NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
+                expenses_id UUID NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
+            CREATE INDEX IF NOT EXISTS idx_categories ON categories(id DESC);
             CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(date DESC);
-            CREATE INDEX IF NOT EXISTS idx_user_expenses_user_id ON user_expenses(user_id);
+            CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category_name DESC);
+            CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+            CREATE INDEX IF NOT EXISTS idx_userexpenses_ids ON user_expenses(user_id);
+            CREATE INDEX IF NOT EXISTS idx_expenses_ids ON user_expenses(expenses_id);
             """;
 
         await cmd.ExecuteNonQueryAsync();

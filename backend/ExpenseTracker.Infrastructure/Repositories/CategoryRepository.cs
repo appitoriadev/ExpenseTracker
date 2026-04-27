@@ -71,7 +71,7 @@ public class CategoryRepository : ICategoryRepository
             await connection.OpenAsync();
 
             using (var command = new NpgsqlCommand(
-                "SELECT id, category_name, created_at FROM dbo.categories WHERE category_name = '@name'",
+                "SELECT id, category_name, created_at FROM dbo.categories WHERE category_name = @name",
                 connection))
             {
                 command.Parameters.AddWithValue("@name", name);

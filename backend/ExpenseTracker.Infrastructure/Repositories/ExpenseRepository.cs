@@ -23,7 +23,7 @@ public class ExpenseRepository : IExpenseRepository
             await connection.OpenAsync();
 
             using (var command = new NpgsqlCommand(
-                "SELECT id, title, amount, category, date FROM expenses ORDER BY date DESC",
+                "SELECT id, title, amount, category_name, date FROM expenses ORDER BY date DESC",
                 connection))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -39,14 +39,14 @@ public class ExpenseRepository : IExpenseRepository
         return expenses;
     }
 
-    public async Task<Expense?> GetByIdAsync(int id)
+    public async Task<Expense?> GetByIdAsync(Guid id)
     {
         using (var connection = _connectionProvider.CreateConnection())
         {
             await connection.OpenAsync();
 
             using (var command = new NpgsqlCommand(
-                "SELECT id, title, amount, category, date FROM expenses WHERE id = @id",
+                "SELECT id, title, amount, category_name, date FROM expenses WHERE id = @id",
                 connection))
             {
                 command.Parameters.AddWithValue("@id", id);
@@ -71,18 +71,19 @@ public class ExpenseRepository : IExpenseRepository
             await connection.OpenAsync();
 
             using (var command = new NpgsqlCommand(
-                @"INSERT INTO expenses (title, amount, category, date)
+                @"INSERT INTO expenses (title, amount, category_name, date)
                   VALUES (@title, @amount, @category, @date)
                   RETURNING id",
                 connection))
             {
                 command.Parameters.AddWithValue("@title", expense.Title);
                 command.Parameters.AddWithValue("@amount", expense.Amount);
-                command.Parameters.AddWithValue("@category", expense.Category);
+                command.Parameters.AddWithValue("@category", expense.CategoryName);
                 command.Parameters.AddWithValue("@date", expense.Date);
 
                 var result = await command.ExecuteScalarAsync();
-                expense.Id = (int)(result ?? 0);
+                if (result is Guid guid)
+                    expense.Id = guid;
             }
         }
 
@@ -97,14 +98,14 @@ public class ExpenseRepository : IExpenseRepository
 
             using (var command = new NpgsqlCommand(
                 @"UPDATE expenses
-                  SET title = @title, amount = @amount, category = @category, date = @date
+                  SET title = @title, amount = @amount, category_name = @category, date = @date
                   WHERE id = @id",
                 connection))
             {
                 command.Parameters.AddWithValue("@id", expense.Id);
                 command.Parameters.AddWithValue("@title", expense.Title);
                 command.Parameters.AddWithValue("@amount", expense.Amount);
-                command.Parameters.AddWithValue("@category", expense.Category);
+                command.Parameters.AddWithValue("@category", expense.CategoryName);
                 command.Parameters.AddWithValue("@date", expense.Date);
 
                 var rowsAffected = await command.ExecuteNonQueryAsync();
@@ -113,7 +114,7 @@ public class ExpenseRepository : IExpenseRepository
         }
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> DeleteAsync(Guid id)
     {
         using (var connection = _connectionProvider.CreateConnection())
         {
@@ -133,10 +134,10 @@ public class ExpenseRepository : IExpenseRepository
     private static Expense MapFromReader(NpgsqlDataReader reader) =>
         new()
         {
-            Id       = reader.GetInt32(0),
+            Id       = reader.GetGuid(0),
             Title    = reader.GetString(1),
             Amount   = reader.GetDecimal(2),
-            Category = reader.GetString(3),
+            CategoryName = reader.GetString(3),
             Date     = reader.GetDateTime(4)
         };
 }
