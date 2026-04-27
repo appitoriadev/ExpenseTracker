@@ -23,7 +23,7 @@ public class ExpenseRepository : IExpenseRepository
             await connection.OpenAsync();
 
             using (var command = new NpgsqlCommand(
-                "SELECT id, title, amount, category_name, date FROM expenses ORDER BY date DESC",
+                "SELECT id, title, amount, category_name, date FROM dbo.expenses ORDER BY date DESC",
                 connection))
             {
                 using (var reader = await command.ExecuteReaderAsync())
@@ -46,7 +46,7 @@ public class ExpenseRepository : IExpenseRepository
             await connection.OpenAsync();
 
             using (var command = new NpgsqlCommand(
-                "SELECT id, title, amount, category_name, date FROM expenses WHERE id = @id",
+                "SELECT id, title, amount, category_name, date FROM dbo.expenses WHERE id = @id",
                 connection))
             {
                 command.Parameters.AddWithValue("@id", id);
@@ -71,7 +71,7 @@ public class ExpenseRepository : IExpenseRepository
             await connection.OpenAsync();
 
             using (var command = new NpgsqlCommand(
-                @"INSERT INTO expenses (title, amount, category_name, date)
+                @"INSERT INTO dbo.expenses (title, amount, category_name, date)
                   VALUES (@title, @amount, @category, @date)
                   RETURNING id",
                 connection))
@@ -97,7 +97,7 @@ public class ExpenseRepository : IExpenseRepository
             await connection.OpenAsync();
 
             using (var command = new NpgsqlCommand(
-                @"UPDATE expenses
+                @"UPDATE dbo.expenses
                   SET title = @title, amount = @amount, category_name = @category, date = @date
                   WHERE id = @id",
                 connection))
@@ -121,7 +121,7 @@ public class ExpenseRepository : IExpenseRepository
             await connection.OpenAsync();
 
             using (var command = new NpgsqlCommand(
-                "DELETE FROM expenses WHERE id = @id",
+                "DELETE FROM dbo.expenses WHERE id = @id",
                 connection))
             {
                 command.Parameters.AddWithValue("@id", id);
