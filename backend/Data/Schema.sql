@@ -57,3 +57,14 @@ CREATE TABLE IF NOT EXISTS dbo.user_expenses (
 -- Create indexes for faster lookups on junction table
 CREATE INDEX IF NOT EXISTS idx_userexpenses_user ON dbo.user_expenses (user_id);
 CREATE INDEX IF NOT EXISTS idx_userexpenses_expense ON dbo.user_expenses (expense_id);
+
+-- Seed default categories (skip if already present)
+INSERT INTO dbo.categories (category_name) VALUES
+  ('Food'),
+  ('Transport'),
+  ('Entertainment'),
+  ('Housing'),
+  ('Health'),
+  ('Shopping'),
+  ('Other')
+ON CONFLICT (category_name) DO NOTHING;
