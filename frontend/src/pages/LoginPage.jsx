@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -12,6 +13,11 @@ export default function LoginPage() {
   const [errors, setErrors]   = useState({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [sessionMsg, setSessionMsg] = useState(() => {
+    const expired = sessionStorage.getItem('session_expired');
+    if (expired) sessionStorage.removeItem('session_expired');
+    return expired ? 'Your session has expired. Please sign in again.' : '';
+  });
 
   const set = (key, value) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -54,6 +60,11 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-md p-8">
+          {sessionMsg && (
+            <Alert type="warning" onClose={() => setSessionMsg('')} autoDismiss={4000}>
+              {sessionMsg}
+            </Alert>
+          )}
           {apiError && (
             <Alert type="error" onClose={() => setApiError('')}>
               {apiError}
@@ -86,6 +97,14 @@ export default function LoginPage() {
             </Button>
           </form>
         </div>
+
+        {/* Link to registration */}
+        <p className="text-center text-sm text-gray-500 mt-6">
+          Don&apos;t have an account?{' '}
+          <Link to="/register" className="font-medium text-primary-600 hover:text-primary-700">
+            Sign up
+          </Link>
+        </p>
       </div>
     </div>
   );

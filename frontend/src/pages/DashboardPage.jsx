@@ -19,7 +19,7 @@ const inMonth = (expenses, month, year) =>
   });
 
 export default function DashboardPage() {
-  const { expenses, loading, error } = useExpenses();
+  const { expenses, loading, error, fetchExpenses } = useExpenses();
   const { categories } = useCategories();
   const [modal, setModal] = useState(null); // null | { type: 'add'|'edit'|'delete', expense? }
 
@@ -50,7 +50,17 @@ export default function DashboardPage() {
       </div>
 
       {/* Error state */}
-      {error && <Alert type="error">{error}</Alert>}
+      {error && (
+        <Alert type="error">
+          {error}{' '}
+          <button
+            onClick={fetchExpenses}
+            className="underline font-semibold hover:opacity-80"
+          >
+            Retry
+          </button>
+        </Alert>
+      )}
 
       {/* Summary cards */}
       <SummaryCards

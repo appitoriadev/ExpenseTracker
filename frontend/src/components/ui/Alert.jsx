@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import Icon from './Icon';
 import { cn } from '../../utils/cn';
 
@@ -15,10 +16,17 @@ const STYLES = {
  *   type?: 'success'|'error'|'warning'|'info',
  *   children: React.ReactNode,
  *   onClose?: () => void,
+ *   autoDismiss?: number,
  *   className?: string,
  * }} props
  */
-export default function Alert({ type = 'info', children, onClose, className = '' }) {
+export default function Alert({ type = 'info', children, onClose, autoDismiss, className = '' }) {
+  useEffect(() => {
+    if (!autoDismiss || !onClose) return;
+    const id = setTimeout(onClose, autoDismiss);
+    return () => clearTimeout(id);
+  }, [autoDismiss, onClose]);
+
   return (
     <div
       role="alert"

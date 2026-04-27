@@ -26,7 +26,7 @@ export default function ProfilePage() {
           </div>
           <div>
             <p className="text-base font-semibold text-gray-900">{user?.username ?? 'admin'}</p>
-            <p className="text-sm text-gray-500">Single-user mode</p>
+            <p className="text-sm text-gray-500">Expense Tracker</p>
           </div>
         </div>
 

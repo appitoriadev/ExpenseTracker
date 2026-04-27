@@ -10,7 +10,7 @@ import Icon from '../components/ui/Icon';
 import { useCategories } from '../hooks/useCategories';
 
 export default function ExpensesPage() {
-  const { expenses, loading, error } = useExpenses();
+  const { expenses, loading, error, fetchExpenses } = useExpenses();
   const { categories: apiCategories } = useCategories();
 
   const [modal,  setModal]  = useState(null);
@@ -36,7 +36,17 @@ export default function ExpensesPage() {
         </Button>
       </div>
 
-      {error && <Alert type="error">{error}</Alert>}
+      {error && (
+        <Alert type="error">
+          {error}{' '}
+          <button
+            onClick={fetchExpenses}
+            className="underline font-semibold hover:opacity-80"
+          >
+            Retry
+          </button>
+        </Alert>
+      )}
 
       {/* Search */}
       <div className="relative mb-3">

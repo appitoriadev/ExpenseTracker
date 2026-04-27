@@ -24,6 +24,7 @@ async function request(endpoint, options = {}) {
   // Token expired or invalid — clear storage and redirect to login
   if (response.status === 401) {
     localStorage.removeItem('et_token');
+    sessionStorage.setItem('session_expired', '1');
     window.location.href = '/login';
     return;
   }

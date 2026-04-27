@@ -14,6 +14,17 @@ export const authService = {
     return data;
   },
 
+  /**
+   * POST /api/Auth/register
+   * Request body matches RegisterRequest record: { username, email, password, firstName, lastName }
+   * Response matches AuthResponse record: { token, refreshToken, expiresAt, ... }
+   */
+  async register(username, email, password, firstName, lastName) {
+    const data = await api.post('/api/Auth/register', { username, email, password, firstName, lastName });
+    localStorage.setItem(TOKEN_KEY, data.token);
+    return data;
+  },
+
   logout() {
     localStorage.removeItem(TOKEN_KEY);
   },
