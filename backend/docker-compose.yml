@@ -38,6 +38,7 @@ services:
     ports:
       - "5157:8080"
       - "5158:8443"
+      - "5005:5005"
     depends_on:
       db:
         condition: service_healthy
